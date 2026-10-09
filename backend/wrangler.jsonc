@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dsa-tracker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-05",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "../frontend/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dsa-tracker-db",
+      "database_id": "dsa-tracker-db-id",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "JWT_SECRET": "dsa_tracker_jwt_secret_edge_key_secure_2026"
+  }
+}
