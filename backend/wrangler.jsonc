@@ -11,7 +11,7 @@
       "binding": "DB",
       "database_name": "dsa-tracker-db",
       "database_id": "dsa-tracker-db-id",
-      "migrations_dir": "migrations"
+      "migrations_dir": "../database/migrations"
     }
   ],
   "vars": {

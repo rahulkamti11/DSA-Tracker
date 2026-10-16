@@ -1,6 +1,5 @@
--- Cloudflare D1 Normalized Database Schema for DSA-Tracker
+-- Cloudflare D1 Migration: 0001_initial.sql
 
--- 1. Users Table
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
@@ -10,7 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. User Daily Activity (Heatmap)
 CREATE TABLE IF NOT EXISTS user_activity (
     user_id TEXT NOT NULL,
     date TEXT NOT NULL,
@@ -19,7 +17,6 @@ CREATE TABLE IF NOT EXISTS user_activity (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 3. Collections Table
 CREATE TABLE IF NOT EXISTS collections (
     id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -31,7 +28,6 @@ CREATE TABLE IF NOT EXISTS collections (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 4. Problems Table (Core SRS State)
 CREATE TABLE IF NOT EXISTS problems (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -58,7 +54,6 @@ CREATE TABLE IF NOT EXISTS problems (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 5. Problem Tags (Normalized 1-to-Many)
 CREATE TABLE IF NOT EXISTS problem_tags (
     problem_id TEXT NOT NULL,
     tag TEXT NOT NULL,
@@ -66,7 +61,6 @@ CREATE TABLE IF NOT EXISTS problem_tags (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
 );
 
--- 6. Problem Platforms (Normalized Multi-Platform Links)
 CREATE TABLE IF NOT EXISTS problem_platforms (
     id TEXT PRIMARY KEY,
     problem_id TEXT NOT NULL,
@@ -75,7 +69,6 @@ CREATE TABLE IF NOT EXISTS problem_platforms (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
 );
 
--- 7. Problem Reviews (Review & Interval History Audit Log)
 CREATE TABLE IF NOT EXISTS problem_reviews (
     id TEXT PRIMARY KEY,
     problem_id TEXT NOT NULL,
@@ -88,7 +81,6 @@ CREATE TABLE IF NOT EXISTS problem_reviews (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Query Optimization Indexes
 CREATE INDEX IF NOT EXISTS idx_problems_user_active ON problems(user_id, is_deleted);
 CREATE INDEX IF NOT EXISTS idx_problems_next_rev ON problems(user_id, next_rev);
 CREATE INDEX IF NOT EXISTS idx_problem_tags_tag ON problem_tags(tag);
