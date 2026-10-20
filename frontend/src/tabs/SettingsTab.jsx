@@ -3,12 +3,10 @@ import useTheme from '../hooks/useTheme.js';
 import {
   Pencil,
   Check,
-  X,
   Lock,
   Eye,
   EyeOff,
   User,
-  Mail,
   AlertCircle,
   CheckCircle2,
   Shield,
@@ -136,7 +134,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
   return (
     <div className="animate-in fade-in space-y-6 max-w-5xl">
       {/* Header Banner - Note: Cloud Synced badge removed per user request */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm">
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-slate-900 dark:text-sky-400">Settings & Profile</h2>
@@ -164,7 +162,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Profile Details Card */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-5 animate-in slide-in-from-bottom-2 duration-300">
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm space-y-5 animate-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-sm">
@@ -402,7 +400,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
 
         {/* Preferences & System Settings Card */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-5 animate-in slide-in-from-bottom-2 duration-300 delay-75">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm space-y-5 animate-in slide-in-from-bottom-2 duration-300 delay-75">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
               Appearance & Theme
             </h3>
