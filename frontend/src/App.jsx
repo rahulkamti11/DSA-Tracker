@@ -49,6 +49,7 @@ import useAuth from './hooks/useAuth.js';
 import useData from './hooks/useData.js';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js';
 import useTheme from './hooks/useTheme.js';
+import useAnimatedFavicon from './hooks/useAnimatedFavicon.js';
 
 import { today, addDays, formatDate } from './utils/date.js';
 import { getPlatformInfo, getRealUrl } from './utils/platform.js';
@@ -56,6 +57,7 @@ import { parseMd } from './utils/markdown.js';
 
 export default function App() {
   useTheme();
+  useAnimatedFavicon();
   // Custom Hooks for Auth and Data Services
   const {
     user,
