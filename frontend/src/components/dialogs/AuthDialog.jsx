@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Lock, User, Mail, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
 
 export default function AuthDialog({
   open,
@@ -69,10 +69,10 @@ export default function AuthDialog({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
       <form
         onSubmit={handleSubmit}
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-7 rounded-2xl w-full max-w-sm shadow-2xl space-y-5"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-7 rounded-xl sm:rounded-2xl w-full max-w-sm shadow-2xl space-y-4 sm:space-y-5 max-h-[92vh] overflow-y-auto custom-scrollbar"
       >
         <div className="text-center">
           <h1 className="text-2xl font-black text-sky-500 dark:text-sky-400 font-mono tracking-tight mb-1">
