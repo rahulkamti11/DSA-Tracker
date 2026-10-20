@@ -22,7 +22,7 @@ export default function ReviewTab({ active, reviewTab, setReviewTab, problems, m
 
   return (
     <div className="space-y-6 animate-in fade-in">
-      <div className="bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:to-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex items-center gap-5 shadow-lg">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex items-center gap-5 shadow-lg">
         <span className="text-4xl drop-shadow-[0_0_15px_rgba(56,189,248,0.3)]">{activeHeader.emoji}</span>
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-200">{activeHeader.title}</h2>
