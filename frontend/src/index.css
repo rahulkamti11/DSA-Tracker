@@ -8,6 +8,17 @@ body {
   overscroll-behavior: none;
   background-color: #020617;
   color: #e2e8f0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Hide scrollbar for clean horizontal mobile pill tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 html.light,
