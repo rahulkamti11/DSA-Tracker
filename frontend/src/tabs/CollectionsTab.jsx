@@ -1,4 +1,4 @@
-import { Star, Pencil, Trash } from 'lucide-react';
+import { Star, Pencil, Trash, ArrowLeft } from 'lucide-react';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import { getPlatformInfo, getRealUrl } from '../utils/platform.js';
@@ -26,18 +26,35 @@ export default function CollectionsTab({
     const list = collection && collection.id === 'starred' ? problems.filter((problem) => problem.starred) : problems.filter((problem) => problem.collId === selectedCollection);
 
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+      <div className="space-y-4 animate-in fade-in">
+        <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
           <div>
-            <h3 className="text-lg font-bold text-slate-200">{collection ? collection.name : 'Collection'}</h3>
-            <p className="text-sm text-slate-400">{list.length} problems</p>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <span>Collection:</span>
+              <span className="text-purple-600 dark:text-purple-400">{collection ? collection.name : 'Collection'}</span>
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">{list.length} problems</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSelectedCollection(null)} className="text-slate-400 bg-slate-800 px-3 py-2 rounded-lg">Back</button>
-          </div>
+          <button
+            onClick={() => setSelectedCollection(null)}
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 rounded-lg transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
+          >
+            <ArrowLeft size={14} /> Back
+          </button>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto shadow-xl">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+
+        {/* Mobile Horizontal Scroll Cue */}
+        <div className="flex md:hidden items-center justify-between px-1 text-[11px] font-mono text-slate-400">
+          <span className="text-slate-500">{list.length} {list.length === 1 ? 'problem' : 'problems'}</span>
+          <span className="text-sky-500 dark:text-sky-400 font-semibold animate-pulse">&larr; Swipe sideways to view columns &rarr;</span>
+        </div>
+
+        {/* TABLE VIEW: Unified table for all screen sizes with horizontal sliding */}
+        <div
+          className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto shadow-xl custom-scrollbar"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <table className="min-w-[760px] w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-950/80 text-slate-500 font-mono text-[10px] uppercase tracking-widest border-b border-slate-800">
               <tr>
                 <th className="p-4 rounded-tl-xl">Name</th>
@@ -136,29 +153,38 @@ export default function CollectionsTab({
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in">
-      <div className="flex justify-between items-center bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in">
+      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h2 className="text-lg font-bold text-slate-200">Study Collections</h2>
-          <p className="text-sm text-slate-400 mt-1">Group problems into curated lists.</p>
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">Study Collections</h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Group problems into curated lists.</p>
         </div>
-        <button onClick={() => { setNewCollColor('blue'); setCollModal(true); }} className="bg-sky-500 text-slate-950 px-4 py-2 rounded-lg text-sm font-bold shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] transition-all">+ New List</button>
+        <button
+          onClick={() => { setNewCollColor('blue'); setCollModal(true); }}
+          className="bg-sky-500 text-slate-950 px-3.5 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] active:scale-95 transition-all"
+        >
+          + New List
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
         {collections.length ? collections.map((collection) => {
           const count = collection.id === 'starred' ? problems.filter((problem) => problem.starred).length : problems.filter((problem) => problem.collId === collection.id).length;
           const colorMap = { blue: 'from-sky-500 to-blue-500', green: 'from-emerald-500 to-teal-500', yellow: 'from-amber-400 to-yellow-500', red: 'from-rose-500 to-red-500', purple: 'from-violet-500 to-purple-600', orange: 'from-orange-400 to-amber-500' };
           const gradient = colorMap[collection.color] || colorMap.blue;
           return (
-            <div key={collection.id} onClick={() => setSelectedCollection(collection.id)} className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col justify-between group shadow-lg hover:border-slate-600 transition-colors relative overflow-hidden cursor-pointer">
+            <div
+              key={collection.id}
+              onClick={() => setSelectedCollection(collection.id)}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 rounded-xl flex flex-col justify-between group shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-700 transition-all relative overflow-hidden cursor-pointer active:scale-[0.99]"
+            >
               <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-50 group-hover:opacity-100 transition-opacity`} />
               <div>
-                <h3 className="text-xl font-bold text-slate-200 mb-1">{collection.name}</h3>
-                <p className="text-sm font-mono text-sky-400">{count} problems</p>
-                {collection.description && <p className="text-xs text-slate-400 mt-2 line-clamp-2">{collection.description}</p>}
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">{collection.name}</h3>
+                <p className="text-xs sm:text-sm font-mono text-sky-500 dark:text-sky-400 font-bold">{count} problems</p>
+                {collection.description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">{collection.description}</p>}
               </div>
-              <div className="mt-6 flex justify-end">
+              <div className="mt-5 flex justify-end">
                 {collection.id !== 'starred' && (
                   <button
                     onClick={(e) => {
@@ -172,7 +198,7 @@ export default function CollectionsTab({
                         },
                       });
                     }}
-                    className="text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                    className="text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     <Trash size={12} /> Delete
                   </button>
@@ -180,7 +206,11 @@ export default function CollectionsTab({
               </div>
             </div>
           );
-        }) : <p className="text-slate-500 col-span-full border border-dashed border-slate-700 p-12 text-center rounded-xl font-mono">Create study lists like "Blind 75".</p>}
+        }) : (
+          <p className="text-slate-500 col-span-full border border-dashed border-slate-700 p-12 text-center rounded-xl font-mono text-sm">
+            Create study lists like "Blind 75".
+          </p>
+        )}
       </div>
     </div>
   );

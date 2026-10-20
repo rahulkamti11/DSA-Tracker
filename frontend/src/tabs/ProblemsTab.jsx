@@ -1,5 +1,18 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, X, Search, Star, StarOff, FolderHeart, BookOpen, Eye, Pencil, Trash } from 'lucide-react';
+import {
+  ChevronDown,
+  X,
+  Search,
+  Star,
+  StarOff,
+  FolderHeart,
+  BookOpen,
+  Eye,
+  Pencil,
+  Trash,
+  Filter,
+  SlidersHorizontal,
+} from 'lucide-react';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import { CustomFilterSelect, CustomHeaderSelect } from '../components/ui/Selects.jsx';
@@ -19,9 +32,10 @@ export default function ProblemsTab({
   // Encapsulated states
   const [filters, setFilters] = useState({ search: '', diff: '', status: '', tags: [], platforms: [], collId: '' });
   const [starFilter, setStarFilter] = useState('all'); // 'all' | 'starred' | 'unstarred'
-  const [dateDisplayType, setDateDisplayType] = useState('added'); // 'added' | 'last' | 'next'
+  const [dateDisplayType, setDateDisplayType] = useState('added'); // 'added' | 'last' | 'next' | 'solved' | 'mastered'
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Computations
   const allUniqueTags = useMemo(() => {
@@ -29,6 +43,17 @@ export default function ProblemsTab({
     problems.forEach(p => p.tags && p.tags.forEach(t => set.add(t)));
     return Array.from(set).sort();
   }, [problems]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.diff) count += 1;
+    if (filters.status) count += 1;
+    if (filters.collId) count += 1;
+    if (filters.platforms.length > 0) count += 1;
+    if (filters.tags.length > 0) count += 1;
+    if (starFilter !== 'all') count += 1;
+    return count;
+  }, [filters, starFilter]);
 
   const filteredProblems = useMemo(() => {
     return problems.filter(p => {
@@ -43,129 +68,254 @@ export default function ProblemsTab({
     });
   }, [problems, filters, starFilter]);
 
+  const clearAllFilters = () => {
+    setFilters({ search: '', diff: '', status: '', tags: [], platforms: [], collId: '' });
+    setStarFilter('all');
+    setTagDropdownOpen(false);
+    setPlatformDropdownOpen(false);
+  };
+
   if (!active) return null;
 
   return (
     <div className="space-y-4 animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex flex-col lg:flex-row gap-3 items-end w-full">
+      {/* Filter Card */}
+      <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        {/* Search Row */}
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-end w-full">
           <div className="w-full lg:flex-1 min-w-0">
             <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Search</label>
             <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 focus-within:border-sky-500 transition-colors h-[38px]">
-              <Search size={16} className="text-slate-400" />
+              <Search size={16} className="text-slate-400 shrink-0" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search problems, topics, patterns..."
                 value={filters.search}
                 className="bg-transparent border-none outline-none text-sm p-2 w-full text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               />
+              {filters.search && (
+                <button
+                  type="button"
+                  onClick={() => setFilters({ ...filters, search: '' })}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </div>
 
-          <CustomFilterSelect
-            value={filters.collId}
-            onChange={(val) => setFilters({ ...filters, collId: val })}
-            options={[{ value: '', label: 'All Collections' }, ...collections.map((collection) => ({ value: collection.id, label: collection.name }))]}
-            placeholder="All Collections"
-            label="Collection"
-            widthClass="w-full lg:w-36 shrink-0"
-          />
-
-          <div className="relative w-full lg:w-36 shrink-0">
-            <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Platforms</label>
+          {/* Mobile Filter Controls Bar (Visible on mobile/tablet < lg) */}
+          <div className="flex lg:hidden items-center gap-2 pt-1">
             <button
               type="button"
-              onClick={() => { setPlatformDropdownOpen(!platformDropdownOpen); setTagDropdownOpen(false); }}
-              className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:border-sky-500 transition-colors h-[38px]"
+              onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+              className={`flex-1 flex items-center justify-center gap-2 h-[38px] px-3 rounded-lg text-xs font-bold border transition-colors ${
+                mobileFiltersOpen || activeFilterCount > 0
+                  ? 'bg-sky-500/10 text-sky-500 dark:text-sky-400 border-sky-500/30'
+                  : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+              }`}
             >
-              <span className="truncate">{filters.platforms.length === 0 ? 'All Platforms' : filters.platforms.join(', ')}</span>
-              <ChevronDown size={14} className={`transition-transform ${platformDropdownOpen ? 'rotate-180' : ''}`} />
+              <Filter size={14} />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-sky-500 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black">
+                  {activeFilterCount}
+                </span>
+              )}
+              <ChevronDown size={14} className={`transition-transform ${mobileFiltersOpen ? 'rotate-180' : ''}`} />
             </button>
-            {platformDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
-                {['LeetCode', 'GFG', 'HackerRank', 'Codeforces', 'CodeChef', 'InterviewBit', 'Other'].map((platform) => {
-                  const isSelected = filters.platforms.includes(platform);
-                  return (
-                    <label key={platform} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {
-                          setFilters((prev) => {
-                            const platforms = prev.platforms.includes(platform)
-                              ? prev.platforms.filter((value) => value !== platform)
-                              : [...prev.platforms, platform];
-                            return { ...prev, platforms };
-                          });
-                        }}
-                        className="rounded border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-sky-500 focus:ring-sky-500/20"
-                      />
-                      {platform}
-                    </label>
-                  );
-                })}
-              </div>
+
+            {/* Quick Star Toggle Button on Mobile */}
+            <button
+              type="button"
+              onClick={() => {
+                setStarFilter((prev) => {
+                  if (prev === 'all') return 'starred';
+                  if (prev === 'starred') return 'unstarred';
+                  return 'all';
+                });
+              }}
+              className={`h-[38px] px-3 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors ${
+                starFilter === 'starred'
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-500 dark:text-amber-400'
+                  : starFilter === 'unstarred'
+                    ? 'bg-rose-500/10 border-rose-500/40 text-rose-500 dark:text-rose-400'
+                    : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+              }`}
+              title="Filter by Star"
+            >
+              {starFilter === 'all' && <Star size={15} className="text-slate-400" />}
+              {starFilter === 'starred' && <Star size={15} className="text-amber-400 fill-amber-400" />}
+              {starFilter === 'unstarred' && <StarOff size={15} className="text-rose-400" />}
+              <span className="capitalize">{starFilter === 'all' ? 'All' : starFilter}</span>
+            </button>
+
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="h-[38px] px-3 bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20 rounded-lg text-xs font-bold flex items-center gap-1"
+                title="Reset all filters"
+              >
+                <X size={14} />
+                <span>Reset</span>
+              </button>
             )}
           </div>
 
-          <div className="relative w-full lg:w-36 shrink-0">
-            <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Tags</label>
-            <button
-              type="button"
-              onClick={() => { setTagDropdownOpen(!tagDropdownOpen); setPlatformDropdownOpen(false); }}
-              className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:border-sky-500 transition-colors h-[38px]"
-            >
-              <span className="truncate">{filters.tags.length === 0 ? 'All Tags' : filters.tags.join(', ')}</span>
-              <ChevronDown size={14} className={`transition-transform ${tagDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {tagDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
-                {allUniqueTags.length === 0 ? (
-                  <div className="text-xs text-slate-500 italic p-1">No tags available</div>
-                ) : (
-                  allUniqueTags.map((tag) => {
-                    const isSelected = filters.tags.includes(tag);
+          {/* Desktop Filter Columns & Mobile Expanded Drawer */}
+          <div className={`${mobileFiltersOpen ? 'flex flex-col sm:grid sm:grid-cols-2' : 'hidden'} lg:flex lg:flex-row gap-3 items-stretch lg:items-end w-full lg:w-auto`}>
+            {/* Mobile-Only Difficulty Select */}
+            <div className="w-full lg:hidden">
+              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Difficulty</label>
+              <select
+                value={filters.diff}
+                onChange={(e) => setFilters({ ...filters, diff: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 h-[38px] outline-none"
+              >
+                <option value="">All Difficulties</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+
+            {/* Mobile-Only Status Select */}
+            <div className="w-full lg:hidden">
+              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 h-[38px] outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="Solved">Solved</option>
+                <option value="Attempted">Attempted</option>
+                <option value="Mastered">Mastered</option>
+              </select>
+            </div>
+
+            {/* Collection Select */}
+            <CustomFilterSelect
+              value={filters.collId}
+              onChange={(val) => setFilters({ ...filters, collId: val })}
+              options={[{ value: '', label: 'All Collections' }, ...collections.map((collection) => ({ value: collection.id, label: collection.name }))]}
+              placeholder="All Collections"
+              label="Collection"
+              widthClass="w-full lg:w-36 shrink-0"
+            />
+
+            {/* Platforms Dropdown */}
+            <div className="relative w-full lg:w-36 shrink-0">
+              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Platforms</label>
+              <button
+                type="button"
+                onClick={() => { setPlatformDropdownOpen(!platformDropdownOpen); setTagDropdownOpen(false); }}
+                className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:border-sky-500 transition-colors h-[38px]"
+              >
+                <span className="truncate">{filters.platforms.length === 0 ? 'All Platforms' : filters.platforms.join(', ')}</span>
+                <ChevronDown size={14} className={`transition-transform ${platformDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {platformDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                  {['LeetCode', 'GFG', 'HackerRank', 'Codeforces', 'CodeChef', 'InterviewBit', 'Other'].map((platform) => {
+                    const isSelected = filters.platforms.includes(platform);
                     return (
-                      <label key={tag} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer select-none">
+                      <label key={platform} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {
                             setFilters((prev) => {
-                              const tags = prev.tags.includes(tag) ? prev.tags.filter((value) => value !== tag) : [...prev.tags, tag];
-                              return { ...prev, tags };
+                              const platforms = prev.platforms.includes(platform)
+                                ? prev.platforms.filter((value) => value !== platform)
+                                : [...prev.platforms, platform];
+                              return { ...prev, platforms };
                             });
                           }}
                           className="rounded border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-sky-500 focus:ring-sky-500/20"
                         />
-                        {tag}
+                        {platform}
                       </label>
                     );
-                  })
-                )}
-              </div>
-            )}
-          </div>
+                  })}
+                </div>
+              )}
+            </div>
 
-          <div className="w-full lg:w-24 shrink-0">
-            <div className="hidden lg:block h-[16px] mb-1.5" />
-            <button
-              onClick={() => {
-                setFilters({ search: '', diff: '', status: '', tags: [], platforms: [], collId: '' });
-                setTagDropdownOpen(false);
-                setPlatformDropdownOpen(false);
-              }}
-              className="w-full bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-bold rounded-lg text-sm transition-colors border border-rose-500/20 h-[38px] flex items-center justify-center gap-1.5"
-            >
-              Clear <X size={14} />
-            </button>
+            {/* Tags Dropdown */}
+            <div className="relative w-full lg:w-36 shrink-0">
+              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Tags</label>
+              <button
+                type="button"
+                onClick={() => { setTagDropdownOpen(!tagDropdownOpen); setPlatformDropdownOpen(false); }}
+                className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:border-sky-500 transition-colors h-[38px]"
+              >
+                <span className="truncate">{filters.tags.length === 0 ? 'All Tags' : filters.tags.join(', ')}</span>
+                <ChevronDown size={14} className={`transition-transform ${tagDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {tagDropdownOpen && (
+                <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                  {allUniqueTags.length === 0 ? (
+                    <div className="text-xs text-slate-500 italic p-1">No tags available</div>
+                  ) : (
+                    allUniqueTags.map((tag) => {
+                      const isSelected = filters.tags.includes(tag);
+                      return (
+                        <label key={tag} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              setFilters((prev) => {
+                                const tags = prev.tags.includes(tag) ? prev.tags.filter((value) => value !== tag) : [...prev.tags, tag];
+                                return { ...prev, tags };
+                              });
+                            }}
+                            className="rounded border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-sky-500 focus:ring-sky-500/20"
+                          />
+                          {tag}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Clear Button */}
+            <div className="hidden lg:block w-24 shrink-0">
+              <div className="h-[16px] mb-1.5" />
+              <button
+                onClick={clearAllFilters}
+                className="w-full bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-bold rounded-lg text-sm transition-colors border border-rose-500/20 h-[38px] flex items-center justify-center gap-1.5"
+              >
+                Clear <X size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto lg:overflow-visible shadow-xl">
-        <table className="w-full text-left text-sm">
+      {/* Mobile Horizontal Scroll Cue */}
+      <div className="flex md:hidden items-center justify-between px-1 text-[11px] font-mono text-slate-400">
+        <span className="flex items-center gap-1 text-slate-500">
+          <SlidersHorizontal size={12} />
+          {filteredProblems.length} {filteredProblems.length === 1 ? 'problem' : 'problems'}
+        </span>
+        <span className="flex items-center gap-1 text-sky-500 dark:text-sky-400 font-semibold animate-pulse">
+          &larr; Swipe sideways to view columns &rarr;
+        </span>
+      </div>
+
+      {/* TABLE VIEW: Unified table for all screen sizes with horizontal sliding */}
+      <div
+        className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto shadow-xl custom-scrollbar"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <table className="min-w-[860px] w-full text-left text-sm">
           <thead className="bg-slate-950/80 text-slate-500 font-mono text-[10px] uppercase tracking-widest border-b border-slate-800">
             <tr>
               <th className="py-3 px-2 rounded-tl-xl w-10 text-center">#</th>
