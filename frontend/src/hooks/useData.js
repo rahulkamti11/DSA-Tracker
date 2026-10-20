@@ -72,8 +72,6 @@ export default function useData(user, onOfflineDetected) {
     return getInitialSeedActivity();
   });
 
-  // Track if we've completed initial mount to avoid wiping
-  const isMounted = useRef(false);
 
   // 2. Continuous LocalStorage Persistence
   useEffect(() => {

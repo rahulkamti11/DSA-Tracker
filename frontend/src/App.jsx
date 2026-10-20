@@ -41,6 +41,7 @@ import ProblemFormDialog from './components/dialogs/ProblemFormDialog.jsx';
 import ProblemDetailDialog from './components/dialogs/ProblemDetailDialog.jsx';
 
 import NavItem from './components/navigation/NavItem.jsx';
+import MobileBottomNav from './components/navigation/MobileBottomNav.jsx';
 import Tooltip from './components/ui/Tooltip.jsx';
 import OfflineToast from './components/ui/OfflineToast.jsx';
 import { checkBackendHealth } from './services/api.js';
@@ -102,12 +103,18 @@ export default function App() {
     const validViews = ['dashboard', 'problems', 'review', 'collections', 'topics', 'notes', 'trash', 'settings'];
     return validViews.includes(hash) ? hash : 'dashboard';
   });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const setView = (v) => {
     setViewState(v);
-    window.location.hash = v;
+    setSidebarOpen(false);
   };
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    if (window.location.hash.replace('#', '') !== view) {
+      window.location.hash = view;
+    }
+  }, [view]);
   const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
@@ -370,6 +377,19 @@ export default function App() {
   return (
     <>
       <Shell
+        sidebarOpen={sidebarOpen}
+        onCloseSidebar={() => setSidebarOpen(false)}
+        bottomNav={(
+          <MobileBottomNav
+            view={view}
+            setView={(v) => {
+              setView(v);
+              setSidebarOpen(false);
+            }}
+            dueCount={dueCount}
+            onOpenMenu={() => setSidebarOpen(true)}
+          />
+        )}
         sidebar={(
           <Sidebar sidebarCollapsed={sidebarCollapsed} sidebarOpen={sidebarOpen}>
             <div className={`h-[73px] flex items-center border-b border-slate-200 dark:border-slate-800 transition-all duration-300 shrink-0 ${
@@ -445,17 +465,17 @@ export default function App() {
         )}
         topbar={(
           <Topbar>
-            <div className="flex items-center gap-3">
-              <button className="md:hidden text-slate-400 p-1" onClick={() => setSidebarOpen(true)}><Menu size={22} /></button>
-              <h2 className="text-lg font-bold capitalize hidden sm:block">{view.replace('-', ' ')}</h2>
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button className="md:hidden text-slate-400 hover:text-slate-200 p-1.5 -ml-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0" onClick={() => setSidebarOpen(true)} title="Open Navigation"><Menu size={22} /></button>
+              <h2 className="text-sm sm:text-lg font-bold capitalize truncate text-slate-800 dark:text-slate-100">{view.replace('-', ' ')}</h2>
             </div>
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 shrink-0">
               <Tooltip content="Keyboard Shortcuts">
                 <button onClick={() => setShortcutsModal(true)} className="hidden sm:flex text-slate-400 hover:text-slate-200 p-2 rounded-lg hover:bg-slate-800 transition-colors"><Keyboard size={18}/></button>
               </Tooltip>
               
               <div className="relative">
-                <button onClick={() => setExportOpen(!exportOpen)} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg transition-colors border border-slate-300 dark:border-slate-700/50"><Upload size={16}/><span className="hidden sm:inline">Export</span><ChevronDown size={14} className={exportOpen ? 'rotate-180 transition-transform' : 'transition-transform'}/></button>
+                <button onClick={() => setExportOpen(!exportOpen)} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/50 dark:hover:bg-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-colors border border-slate-300 dark:border-slate-700/50"><Upload size={14} className="sm:w-4 sm:h-4"/><span className="hidden sm:inline">Export</span><ChevronDown size={13} className={exportOpen ? 'rotate-180 transition-transform' : 'transition-transform'}/></button>
                 {exportOpen && (
                   <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50">
                     <button onClick={() => { exportJSON(); setExportOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-700 transition-colors">Export JSON</button>
@@ -464,11 +484,11 @@ export default function App() {
                 )}
               </div>
 
-              <button onClick={() => openAddModal()} className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)]"><Plus size={16} /> <span className="hidden sm:inline">Add Problem</span></button>
+              <button onClick={() => openAddModal()} className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 active:scale-95 transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] cursor-pointer"><Plus size={16} /><span className="hidden sm:inline">Add Problem</span><span className="sm:hidden font-bold">Add</span></button>
               
               {(!user || user.isGuest) ? 
-                <button onClick={() => setAuthModal(true)} className="flex items-center gap-2 text-sm text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-2 rounded-lg hover:bg-sky-500/20 transition-colors cursor-pointer"><LogIn size={16}/> <span className="hidden sm:inline">Login / Register</span></button> :
-                <button onClick={handleLogoutClick} className="flex items-center gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-lg hover:bg-rose-500/20 transition-colors cursor-pointer"><LogOut size={16}/> <span className="hidden sm:inline">Logout</span></button>
+                <button onClick={() => setAuthModal(true)} className="flex items-center gap-1.5 text-xs sm:text-sm text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-sky-500/20 active:scale-95 transition-colors cursor-pointer"><LogIn size={15}/> <span className="hidden sm:inline">Login / Register</span><span className="sm:hidden font-semibold">Login</span></button> :
+                <button onClick={handleLogoutClick} className="flex items-center gap-1.5 text-xs sm:text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-rose-500/20 active:scale-95 transition-colors cursor-pointer"><LogOut size={15}/> <span className="hidden sm:inline">Logout</span></button>
               }
             </div>
           </Topbar>
