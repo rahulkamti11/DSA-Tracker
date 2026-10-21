@@ -389,6 +389,7 @@ export default function App() {
             }}
             dueCount={dueCount}
             onOpenMenu={() => setSidebarOpen(true)}
+            onAddProblem={() => openAddModal()}
           />
         )}
         sidebar={(
@@ -485,7 +486,7 @@ export default function App() {
                 )}
               </div>
 
-              <button onClick={() => openAddModal()} className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 active:scale-95 transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] cursor-pointer"><Plus size={16} /><span className="hidden sm:inline">Add Problem</span><span className="sm:hidden font-bold">Add</span></button>
+              <button onClick={() => openAddModal()} className="hidden md:flex bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm items-center gap-2 active:scale-95 transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] cursor-pointer"><Plus size={16} /><span>Add Problem</span></button>
               
               {(!user || user.isGuest) ? 
                 <button onClick={() => setAuthModal(true)} className="flex items-center gap-1.5 text-xs sm:text-sm text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-sky-500/20 active:scale-95 transition-colors cursor-pointer"><LogIn size={15}/> <span className="hidden sm:inline">Login / Register</span><span className="sm:hidden font-semibold">Login</span></button> :
@@ -557,19 +558,7 @@ export default function App() {
         />
       </Shell>
 
-      {/* Mobile Floating Action Button (Add Problem) */}
-      <button
-        type="button"
-        onClick={() => {
-          triggerHaptic(15);
-          openAddModal();
-        }}
-        className="fixed bottom-20 right-4 z-20 md:hidden w-12 h-12 rounded-full bg-sky-500 hover:bg-sky-400 active:scale-90 text-slate-950 flex items-center justify-center shadow-[0_4px_16px_rgba(56,189,248,0.45)] transition-all cursor-pointer"
-        title="Add Problem"
-        aria-label="Add Problem"
-      >
-        <Plus size={22} className="stroke-[2.5]" />
-      </button>
+
 
       <ProblemFormDialog
         open={probModal.open}
