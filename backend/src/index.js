@@ -3,6 +3,8 @@ import { cors } from 'hono/cors';
 import authRoutes from './routes/auth.js';
 import problemsRoutes from './routes/problems.js';
 import collectionsRoutes from './routes/collections.js';
+import feedbackRoutes from './routes/feedback.js';
+import reportRoutes from './routes/reports.js';
 
 const app = new Hono();
 
@@ -33,6 +35,8 @@ app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISO
 app.route('/api/auth', authRoutes);
 app.route('/api/problems', problemsRoutes);
 app.route('/api/collections', collectionsRoutes);
+app.route('/api/feedback', feedbackRoutes);
+app.route('/api/reports', reportRoutes);
 
 // 404 fallback for unmatched API requests
 app.notFound((c) => {

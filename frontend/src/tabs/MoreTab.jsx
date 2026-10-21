@@ -6,7 +6,6 @@ import {
   Scale,
   HelpCircle,
   Info,
-  Clock,
   Lock,
   Database,
   Cpu,
@@ -17,18 +16,56 @@ import {
   Layers,
   Activity,
   CheckCircle2,
-  Terminal,
+  Star,
+  Send,
+  AlertCircle,
+  LogIn,
+  Monitor,
 } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics.js';
+import { submitFeedback, submitBugReport, getClientDeviceInfo } from '../services/feedback.service.js';
 
-export default function MoreTab({ active, user, initialSection = 'feedback' }) {
+export default function MoreTab({ active, user, initialSection = 'feedback', openAuthModal }) {
   const [activeSection, setActiveSection] = useState(initialSection);
 
+  const isGuest = !user || user.isGuest || user.username === 'guest';
+
+  // ----------------------------------------------------
+  // Feedback Form State (Registered Only)
+  // ----------------------------------------------------
+  const [fbReason, setFbReason] = useState('Feature Suggestion');
+  const [fbRating, setFbRating] = useState(5);
+  const [fbHoverRating, setFbHoverRating] = useState(0);
+  const [fbMessage, setFbMessage] = useState('');
+  const [fbEmail, setFbEmail] = useState('');
+  const [fbLoading, setFbLoading] = useState(false);
+  const [fbSuccess, setFbSuccess] = useState(false);
+  const [fbError, setFbError] = useState('');
+
+  // ----------------------------------------------------
+  // Bug Report Form State (Anyone, Compulsory Email)
+  // ----------------------------------------------------
+  const [repArea, setRepArea] = useState('Review Queue');
+  const [repMessage, setRepMessage] = useState('');
+  const [repEmail, setRepEmail] = useState('');
+  const [repLoading, setRepLoading] = useState(false);
+  const [repSuccess, setRepSuccess] = useState(false);
+  const [repError, setRepError] = useState('');
+
+  // Sync initialSection when passed as prop
   useEffect(() => {
     if (initialSection) {
       setActiveSection(initialSection);
     }
   }, [initialSection]);
+
+  // Pre-fill user emails when user loads
+  useEffect(() => {
+    if (user && !isGuest && user.email) {
+      setFbEmail(user.email);
+      setRepEmail(user.email);
+    }
+  }, [user, isGuest]);
 
   if (!active) return null;
 
@@ -40,6 +77,73 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
     { id: 'help', label: 'Help', icon: HelpCircle },
     { id: 'about', label: 'About', icon: Info },
   ];
+
+  // Handle Feedback Submit
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    setFbError('');
+
+    if (!fbMessage.trim()) {
+      setFbError('Please enter your feedback message.');
+      return;
+    }
+    if (!fbEmail.trim()) {
+      setFbError('Email address is required.');
+      return;
+    }
+
+    try {
+      setFbLoading(true);
+      triggerHaptic(15);
+      await submitFeedback({
+        token: user?.token,
+        reason: fbReason,
+        rating: fbRating,
+        message: fbMessage.trim(),
+        email: fbEmail.trim(),
+      });
+      setFbSuccess(true);
+      setFbMessage('');
+    } catch (err) {
+      setFbError(err.message || 'Failed to submit feedback. Please try again.');
+    } finally {
+      setFbLoading(false);
+    }
+  };
+
+  // Handle Bug Report Submit
+  const handleBugReportSubmit = async (e) => {
+    e.preventDefault();
+    setRepError('');
+
+    if (!repMessage.trim()) {
+      setRepError('Please describe the issue you encountered.');
+      return;
+    }
+    if (!repEmail.trim()) {
+      setRepError('Email address is compulsory so we can inform you when resolved.');
+      return;
+    }
+
+    try {
+      setRepLoading(true);
+      triggerHaptic(15);
+      const deviceInfo = getClientDeviceInfo();
+      await submitBugReport({
+        token: user?.token || null,
+        area: repArea,
+        message: repMessage.trim(),
+        email: repEmail.trim(),
+        deviceInfo,
+      });
+      setRepSuccess(true);
+      setRepMessage('');
+    } catch (err) {
+      setRepError(err.message || 'Failed to submit bug report. Please try again.');
+    } finally {
+      setRepLoading(false);
+    }
+  };
 
   return (
     <div className="animate-in fade-in space-y-4 sm:space-y-6 max-w-5xl pb-12">
@@ -69,41 +173,339 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
         })}
       </div>
 
-      {/* SECTION 1: FEEDBACK (Coming Soon) */}
+      {/* SECTION 1: FEEDBACK (Registered Users Only) */}
       {activeSection === 'feedback' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center shadow-sm space-y-4 animate-in fade-in duration-200">
-          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 text-sky-500 mx-auto flex items-center justify-center font-bold">
-            <MessageSquarePlus size={32} />
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
-            <Clock size={13} />
-            <span>Coming Soon</span>
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
-            User Feedback & Feature Requests
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
-            We are building an interactive voting board where you can propose new algorithmic collections, suggest SRS interval enhancements, and upvote community feature requests.
-          </p>
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {isGuest ? (
+            /* Guest Warning & Login prompt */
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center shadow-sm space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-sky-500/10 text-sky-500 mx-auto flex items-center justify-center font-bold">
+                <Lock size={28} />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+                Registered Users Only
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                Feedback submission is available exclusively to registered members so we can follow up with feature updates directly to your account.
+              </p>
+              {openAuthModal && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={openAuthModal}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 transition-all shadow-md shadow-sky-500/20 cursor-pointer"
+                  >
+                    <LogIn size={15} />
+                    <span>Login or Register Free Account</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Registered User Feedback Form */
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm space-y-5">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
+                  <MessageSquarePlus size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Send Feedback & Suggestions
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Help us refine DSA Tracker for your daily interview preparation.
+                  </p>
+                </div>
+              </div>
+
+              {fbSuccess ? (
+                <div className="p-8 text-center bg-emerald-500/10 border border-emerald-500/30 rounded-2xl space-y-3 animate-in zoom-in-95 duration-200">
+                  <CheckCircle2 size={42} className="text-emerald-500 mx-auto" />
+                  <h4 className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                    Thank You For Your Feedback!
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
+                    Your suggestion has been logged directly in our database. We review every submission carefully.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setFbSuccess(false)}
+                    className="mt-2 px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    Submit Another Feedback
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                  {fbError && (
+                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+                      <AlertCircle size={16} className="shrink-0" />
+                      <span>{fbError}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Reason for Feedback Dropdown */}
+                    <div>
+                      <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold mb-1.5">
+                        Reason for Feedback
+                      </label>
+                      <select
+                        value={fbReason}
+                        onChange={(e) => setFbReason(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl text-slate-900 dark:text-slate-100 text-xs sm:text-sm outline-none focus:border-sky-500 transition-all cursor-pointer"
+                      >
+                        <option value="Feature Suggestion">Feature Suggestion</option>
+                        <option value="General Experience">General Experience</option>
+                        <option value="UI / Design Improvement">UI / Design Improvement</option>
+                        <option value="Content / Problem Sets">Content / Problem Sets</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    {/* Email Address (Auto-fetched + Editable) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                          Contact Email
+                        </label>
+                        <span className="text-[10px] text-sky-500 font-mono">Auto-filled & Editable</span>
+                      </div>
+                      <input
+                        type="email"
+                        required
+                        maxLength={60}
+                        value={fbEmail}
+                        onChange={(e) => setFbEmail(e.target.value)}
+                        placeholder="your.email@example.com"
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl text-slate-900 dark:text-slate-100 text-xs sm:text-sm outline-none focus:border-sky-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Star Rating */}
+                  <div>
+                    <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold mb-1.5">
+                      Your Experience Rating
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const filled = (fbHoverRating || fbRating) >= star;
+                        return (
+                          <button
+                            key={star}
+                            type="button"
+                            onMouseEnter={() => setFbHoverRating(star)}
+                            onMouseLeave={() => setFbHoverRating(0)}
+                            onClick={() => setFbRating(star)}
+                            className="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer"
+                          >
+                            <Star
+                              size={22}
+                              className={
+                                filled
+                                  ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]'
+                                  : 'text-slate-300 dark:text-slate-700'
+                              }
+                            />
+                          </button>
+                        );
+                      })}
+                      <span className="text-xs text-slate-500 dark:text-slate-400 ml-2 font-mono">
+                        {fbRating === 5
+                          ? 'Exceptional ★★★★★'
+                          : fbRating === 4
+                          ? 'Very Good ★★★★☆'
+                          : fbRating === 3
+                          ? 'Good ★★★☆☆'
+                          : fbRating === 2
+                          ? 'Fair ★★☆☆☆'
+                          : 'Needs Improvement ★☆☆☆☆'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Message Textarea */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                        Your Thoughts / Ideas
+                      </label>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {fbMessage.length}/1000
+                      </span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      required
+                      maxLength={1000}
+                      value={fbMessage}
+                      onChange={(e) => setFbMessage(e.target.value)}
+                      placeholder="Tell us what you like or what new features would accelerate your DSA preparation..."
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-slate-900 dark:text-slate-100 text-xs sm:text-sm outline-none focus:border-sky-500 transition-all resize-none"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-[11px] text-slate-400">
+                      Rate limited to 3 submissions/day to prevent spam.
+                    </span>
+                    <button
+                      type="submit"
+                      disabled={fbLoading}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 transition-all shadow-md shadow-sky-500/20 cursor-pointer disabled:opacity-50"
+                    >
+                      {fbLoading ? (
+                        <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Send size={14} />
+                      )}
+                      <span>{fbLoading ? 'Submitting...' : 'Submit Feedback'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* SECTION 2: REPORT (Coming Soon) */}
+      {/* SECTION 2: REPORT (Anyone Can Report, Compulsory Email) */}
       {activeSection === 'report' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center shadow-sm space-y-4 animate-in fade-in duration-200">
-          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 mx-auto flex items-center justify-center font-bold">
-            <Bug size={32} />
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm space-y-5 animate-in fade-in duration-200">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold">
+              <Bug size={22} />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                Report an Issue or Glitch
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Encountered unexpected behavior or a UI bug? Let us know so we can fix it quickly.
+              </p>
+            </div>
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-            <Clock size={13} />
-            <span>Coming Soon</span>
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
-            Direct Bug & Issue Reporter
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
-            An automated crash diagnostics and edge log submitter is currently in development. Direct in-app bug filing with screenshot capture will be available in an upcoming update.
-          </p>
+
+          {repSuccess ? (
+            <div className="p-8 text-center bg-emerald-500/10 border border-emerald-500/30 rounded-2xl space-y-3 animate-in zoom-in-95 duration-200">
+              <CheckCircle2 size={42} className="text-emerald-500 mx-auto" />
+              <h4 className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                Bug Report Submitted!
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
+                Thank you for helping us maintain DSA Tracker. We will inspect the issue and notify you via email when resolved.
+              </p>
+              <button
+                type="button"
+                onClick={() => setRepSuccess(false)}
+                className="mt-2 px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl transition-all cursor-pointer"
+              >
+                Submit Another Report
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleBugReportSubmit} className="space-y-4">
+              {repError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{repError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Where is the Issue? (Area Dropdown) */}
+                <div>
+                  <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold mb-1.5">
+                    Affected Screen / Feature
+                  </label>
+                  <select
+                    value={repArea}
+                    onChange={(e) => setRepArea(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl text-slate-900 dark:text-slate-100 text-xs sm:text-sm outline-none focus:border-rose-500 transition-all cursor-pointer"
+                  >
+                    <option value="Dashboard / Heatmap">Dashboard / Heatmap</option>
+                    <option value="Problems Log">Problems Log</option>
+                    <option value="Review Queue">Review Queue</option>
+                    <option value="Collections">Collections</option>
+                    <option value="Account / Sync">Account / Sync</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                {/* Email Address (Compulsory) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                      Your Email (Compulsory)
+                    </label>
+                    <span className="text-[10px] text-rose-500 font-mono">* Required for reply</span>
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    maxLength={60}
+                    value={repEmail}
+                    onChange={(e) => setRepEmail(e.target.value)}
+                    placeholder="e.g. your.email@example.com"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl text-slate-900 dark:text-slate-100 text-xs sm:text-sm outline-none focus:border-rose-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Message Textarea */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                    Describe the Problem
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {repMessage.length}/1500
+                  </span>
+                </div>
+                <textarea
+                  rows={4}
+                  required
+                  maxLength={1500}
+                  value={repMessage}
+                  onChange={(e) => setRepMessage(e.target.value)}
+                  placeholder="What happened? (e.g. Marked problem as solved but review counter did not increment...)"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-slate-900 dark:text-slate-100 text-xs sm:text-sm outline-none focus:border-rose-500 transition-all resize-none"
+                />
+              </div>
+
+              {/* Device Context Auto-Capture Note */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Monitor size={14} className="text-slate-400 shrink-0" />
+                  <span>
+                    Auto-attaching device info for faster debugging: <strong>{getClientDeviceInfo()}</strong>
+                  </span>
+                </div>
+                <span className="hidden sm:inline-block text-[10px] font-mono text-slate-400">Zero permissions required</span>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[11px] text-slate-400">
+                  Rate limited to 3 reports/hour.
+                </span>
+                <button
+                  type="submit"
+                  disabled={repLoading}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white transition-all shadow-md shadow-rose-500/20 cursor-pointer disabled:opacity-50"
+                >
+                  {repLoading ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send size={14} />
+                  )}
+                  <span>{repLoading ? 'Submitting...' : 'Submit Report'}</span>
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       )}
 

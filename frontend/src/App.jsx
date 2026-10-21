@@ -574,8 +574,7 @@ export default function App() {
         />
 
         {/* VIEW: MORE (Privacy, Legal, Feedback, Contact) */}
-        <MoreTab active={view === 'more'} user={user} initialSection={moreSection}
-        />
+        <MoreTab active={view === 'more'} user={user} initialSection={moreSection} openAuthModal={() => setAuthModal(true)} />
       </Shell>
 
 
