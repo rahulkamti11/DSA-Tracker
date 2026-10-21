@@ -4,7 +4,6 @@ import { hashPassword, comparePassword, createToken } from '../utils/crypto.js';
 import { today, fetchUserActivityMap } from '../utils/db.js';
 import {
   ensureGuestSeeded,
-  insertSeedProblemsAndCollections,
   resetGuestProfile,
 } from '../services/seed.js';
 
@@ -119,15 +118,6 @@ authRoutes.post('/login', async (c) => {
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
       return c.json({ message: 'Invalid credentials.' }, 400);
-    }
-
-    // Auto-seed check if user has zero problems
-    const probCount = await db.prepare(
-      `SELECT COUNT(*) as count FROM problems WHERE user_id = ?`
-    ).bind(user.id).first('count');
-
-    if (Number(probCount) === 0) {
-      await insertSeedProblemsAndCollections(db, user.id);
     }
 
     const activity = await fetchUserActivityMap(db, user.id);
@@ -336,10 +326,9 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
     }
 
     // 1. Move custom collections from guest to target user
-    const defaultIds = ['starred', 'blind75', 'top150'];
     await db.prepare(
       `UPDATE collections SET user_id = ? 
-       WHERE user_id = ? AND id NOT IN ('starred', 'blind75', 'top150')`
+       WHERE user_id = ? AND id != 'starred'`
     ).bind(targetUserId, guestUser.id).run();
 
     // 2. Move problems from guest to target user

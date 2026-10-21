@@ -1,11 +1,11 @@
 -- ==============================================================================
--- Cloudflare D1 (SQLite) Complete Database Schema for DSA-Tracker
+-- Cloudflare D1 (SQLite) Master Database Schema for DSA-Tracker
 -- ==============================================================================
--- You can execute this file directly in the Cloudflare D1 Console 
--- or apply it via Wrangler migrations.
+-- Execute this single file in the Cloudflare D1 Console to create all tables
+-- and query optimization indexes in one click.
 -- ==============================================================================
 
--- 1. Users Table
+-- 1. Users Table (Includes authentication, unique username, and email)
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. User Daily Activity (Heatmap)
+-- 2. User Daily Activity (Heatmap tracker)
 CREATE TABLE IF NOT EXISTS user_activity (
     user_id TEXT NOT NULL,
     date TEXT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS user_activity (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 3. Collections Table
+-- 3. Collections Table (Starred, Blind75, NeetCode 150, Custom)
 CREATE TABLE IF NOT EXISTS collections (
     id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS collections (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 4. Problems Table (Core SRS State)
+-- 4. Problems Table (Core SRS State Machine)
 CREATE TABLE IF NOT EXISTS problems (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS problems (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 5. Problem Tags (Normalized Many-to-Many / 1-to-Many)
+-- 5. Problem Tags (Normalized Many-to-Many Tags)
 CREATE TABLE IF NOT EXISTS problem_tags (
     problem_id TEXT NOT NULL,
     tag TEXT NOT NULL,
@@ -72,12 +72,12 @@ CREATE TABLE IF NOT EXISTS problem_tags (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
 );
 
--- 6. Problem Platforms (Normalized Multi-Platform Links)
+-- 6. Problem Platforms (LeetCode, Codeforces, HackerRank, GFG, NeetCode Links)
 CREATE TABLE IF NOT EXISTS problem_platforms (
-    id TEXT PRIMARY KEY,
     problem_id TEXT NOT NULL,
     platform TEXT NOT NULL,
     url TEXT NOT NULL,
+    PRIMARY KEY (problem_id, platform),
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
 );
 
@@ -94,14 +94,7 @@ CREATE TABLE IF NOT EXISTS problem_reviews (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Query Optimization Indexes
-CREATE INDEX IF NOT EXISTS idx_problems_user_active ON problems(user_id, is_deleted);
-CREATE INDEX IF NOT EXISTS idx_problems_next_rev ON problems(user_id, next_rev);
-CREATE INDEX IF NOT EXISTS idx_problem_tags_tag ON problem_tags(tag);
-CREATE INDEX IF NOT EXISTS idx_problem_platforms_problem ON problem_platforms(problem_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_problem ON problem_reviews(problem_id);
-
--- 8. Feedback Table (Registered users only)
+-- 8. Feedback Table (Registered users with rate-limiting support)
 CREATE TABLE IF NOT EXISTS feedback (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -112,9 +105,6 @@ CREATE TABLE IF NOT EXISTS feedback (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback(user_id);
-CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
 
 -- 9. Bug Reports Table (Anyone can report, compulsory email)
 CREATE TABLE IF NOT EXISTS bug_reports (
@@ -129,5 +119,16 @@ CREATE TABLE IF NOT EXISTS bug_reports (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- ==============================================================================
+-- Query Optimization Indexes
+-- ==============================================================================
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_problems_user_active ON problems(user_id, is_deleted);
+CREATE INDEX IF NOT EXISTS idx_problems_next_rev ON problems(user_id, next_rev);
+CREATE INDEX IF NOT EXISTS idx_problem_tags_tag ON problem_tags(tag);
+CREATE INDEX IF NOT EXISTS idx_problem_platforms_problem ON problem_platforms(problem_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_problem ON problem_reviews(problem_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reports_created ON bug_reports(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reports_email ON bug_reports(email);
