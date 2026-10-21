@@ -30,8 +30,8 @@ export default function ReviewTab({ active, reviewTab, setReviewTab, problems, m
         </div>
       </div>
 
-      {/* Tabs with smooth horizontal scroll on mobile */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
+      {/* Symmetric sub-tabs on mobile, flex on desktop */}
+      <div className="grid grid-cols-3 sm:flex sm:justify-start border-b border-slate-200 dark:border-slate-800 gap-1 sm:gap-6">
         {[
           { id: 'dueToday', label: 'Due Today', count: dueToday.length, activeColor: 'text-sky-500 dark:text-sky-400 border-sky-500', badgeColor: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20' },
           { id: 'overDue', label: 'Over Due', count: overDue.length, activeColor: 'text-rose-500 dark:text-rose-400 border-rose-500', badgeColor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
@@ -42,13 +42,16 @@ export default function ReviewTab({ active, reviewTab, setReviewTab, problems, m
             <button
               key={tab.id}
               type="button"
-              onClick={() => setReviewTab(tab.id)}
-              className={`pb-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 relative -mb-[2px] whitespace-nowrap shrink-0 ${
+              onClick={() => {
+                triggerHaptic(10);
+                setReviewTab(tab.id);
+              }}
+              className={`pb-3 pt-1 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center justify-center gap-1.5 sm:gap-2 relative -mb-[2px] whitespace-nowrap ${
                 isActive ? `${tab.activeColor} border-current` : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
-              {tab.label}
-              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono border font-bold ${
+              <span className="truncate">{tab.label}</span>
+              <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono border font-bold shrink-0 ${
                 isActive ? tab.badgeColor : 'bg-slate-100 dark:bg-slate-950/40 text-slate-500 dark:text-slate-600 border-slate-200 dark:border-slate-800/40'
               }`}>
                 {tab.count}
