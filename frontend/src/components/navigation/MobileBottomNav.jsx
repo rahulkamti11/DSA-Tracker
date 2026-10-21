@@ -10,6 +10,7 @@ import {
   BookOpen,
   Trash2,
   Settings,
+  MoreHorizontal,
   X,
 } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics.js';
@@ -30,6 +31,7 @@ export default function MobileBottomNav({
     { id: 'notes', label: 'Notes', icon: BookOpen },
     { id: 'trash', label: 'Recycle Bin', icon: Trash2, badge: trashCount },
     { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'more', label: 'More (Privacy, Legal, Feedback)', icon: MoreHorizontal },
   ];
 
   const isMoreActive = isMoreOpen || moreItems.some((item) => item.id === view);

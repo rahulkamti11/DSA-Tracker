@@ -8,6 +8,7 @@ import {
   BookOpen,
   Trash2,
   Settings,
+  MoreHorizontal,
   Menu,
   X,
   Plus,
@@ -30,6 +31,7 @@ import CollectionsTab from './tabs/CollectionsTab.jsx';
 import NotesTab from './tabs/NotesTab.jsx';
 import RecycleTab from './tabs/RecycleTab.jsx';
 import SettingsTab from './tabs/SettingsTab.jsx';
+import MoreTab from './tabs/MoreTab.jsx';
 
 import ShortcutDialog from './components/dialogs/ShortcutDialog.jsx';
 import AuthDialog from './components/dialogs/AuthDialog.jsx';
@@ -447,6 +449,7 @@ export default function App() {
               <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
                 <NavItem id="trash" icon={Trash2} label="Recycle Bin" alert={trash.length} active={view === 'trash'} sidebarCollapsed={sidebarCollapsed} onClick={setView} />
                 <NavItem id="settings" icon={Settings} label="Settings" active={view === 'settings'} sidebarCollapsed={sidebarCollapsed} onClick={setView} />
+                <NavItem id="more" icon={MoreHorizontal} label="More" active={view === 'more'} sidebarCollapsed={sidebarCollapsed} onClick={setView} />
               </div>
             </nav>
 
@@ -565,6 +568,10 @@ export default function App() {
           user={user}
           onUpdateProfile={handleUpdateProfile}
           openAuthModal={() => setAuthModal(true)}
+        />
+
+        {/* VIEW: MORE (Privacy, Legal, Feedback, Contact) */}
+        <MoreTab active={view === 'more'} user={user}
         />
       </Shell>
 
