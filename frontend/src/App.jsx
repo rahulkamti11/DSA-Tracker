@@ -55,6 +55,7 @@ import useAnimatedFavicon from './hooks/useAnimatedFavicon.js';
 import { today, addDays, formatDate } from './utils/date.js';
 import { getPlatformInfo, getRealUrl } from './utils/platform.js';
 import { parseMd } from './utils/markdown.js';
+import { triggerHaptic } from './utils/haptics.js';
 
 export default function App() {
   useTheme();
@@ -555,6 +556,20 @@ export default function App() {
           openAuthModal={() => setAuthModal(true)}
         />
       </Shell>
+
+      {/* Mobile Floating Action Button (Add Problem) */}
+      <button
+        type="button"
+        onClick={() => {
+          triggerHaptic(15);
+          openAddModal();
+        }}
+        className="fixed bottom-20 right-4 z-20 md:hidden w-12 h-12 rounded-full bg-sky-500 hover:bg-sky-400 active:scale-90 text-slate-950 flex items-center justify-center shadow-[0_4px_16px_rgba(56,189,248,0.45)] transition-all cursor-pointer"
+        title="Add Problem"
+        aria-label="Add Problem"
+      >
+        <Plus size={22} className="stroke-[2.5]" />
+      </button>
 
       <ProblemFormDialog
         open={probModal.open}

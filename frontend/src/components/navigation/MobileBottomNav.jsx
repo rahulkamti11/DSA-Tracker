@@ -1,4 +1,5 @@
 import { LayoutDashboard, ListTodo, RotateCcw, FolderHeart, Menu } from 'lucide-react';
+import { triggerHaptic } from '../../utils/haptics.js';
 
 export default function MobileBottomNav({ view, setView, dueCount, onOpenMenu }) {
   const items = [
@@ -21,6 +22,7 @@ export default function MobileBottomNav({ view, setView, dueCount, onOpenMenu })
               key={item.id}
               type="button"
               onClick={() => {
+                triggerHaptic(10);
                 if (item.isAction) {
                   onOpenMenu();
                 } else {

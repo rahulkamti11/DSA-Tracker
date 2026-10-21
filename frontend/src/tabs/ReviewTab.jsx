@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import Badge from '../components/ui/Badge.jsx';
 import { today } from '../utils/date.js';
+import { triggerHaptic } from '../utils/haptics.js';
 
 export default function ReviewTab({ active, reviewTab, setReviewTab, problems, markReviewed, setRemModal }) {
   const srsProblems = useMemo(() => problems.filter(p => p.status === 'Solved' || p.status === 'Attempted'), [problems]);
@@ -90,7 +91,7 @@ export default function ReviewTab({ active, reviewTab, setReviewTab, problems, m
               <div className="flex items-center gap-2 sm:gap-3 pt-1 md:pt-0 shrink-0">
                 {problem.nextRev <= today() && (
                   <button
-                    onClick={() => markReviewed(problem.id)}
+                    onClick={() => { triggerHaptic(15); markReviewed(problem.id); }}
                     className="flex-1 md:flex-none h-11 px-4 sm:px-5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg text-xs sm:text-sm font-bold hover:bg-emerald-500/20 active:scale-95 transition-all shadow-[0_0_10px_rgba(16,185,129,0.1)] flex items-center justify-center gap-1.5"
                   >
                     ✓ Marked Done
