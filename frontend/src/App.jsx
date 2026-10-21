@@ -76,6 +76,7 @@ export default function App() {
     handleAuth,
     handleLogout,
     handleUpdateProfile,
+    handleDeleteAccount,
   } = useAuth();
 
   // Backend Connectivity & Offline Detection States
@@ -567,6 +568,7 @@ export default function App() {
           active={view === 'settings'}
           user={user}
           onUpdateProfile={handleUpdateProfile}
+          onDeleteAccount={handleDeleteAccount}
           openAuthModal={() => setAuthModal(true)}
         />
 

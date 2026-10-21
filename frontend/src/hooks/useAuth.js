@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { guestLogin, authenticate, syncGuestData, updateProfile } from '../services/auth.service.js';
+import { guestLogin, authenticate, syncGuestData, updateProfile, deleteAccount } from '../services/auth.service.js';
 
 export default function useAuth() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('dsa_session') || 'null'));
@@ -13,11 +13,11 @@ export default function useAuth() {
     if (!user) {
       guestLogin()
         .then(data => {
-          setUser({ username: data.user.username, name: data.user.name, token: data.token, isGuest: true });
+          setUser({ username: data.user.username, name: data.user.name, email: data.user.email || '', token: data.token, isGuest: true });
         })
         .catch(err => {
           console.warn('Backend offline, initialized offline guest session:', err.message);
-          setUser({ username: 'guest', name: 'Guest User', token: null, isGuest: true });
+          setUser({ username: 'guest', name: 'Guest User', email: '', token: null, isGuest: true });
         });
     }
   }, [user]);
@@ -35,12 +35,18 @@ export default function useAuth() {
     e.preventDefault();
     const fd = new FormData(e.target);
     const username = fd.get('username');
+    const email = fd.get('email');
     const password = fd.get('password');
     const name = fd.get('name') || username;
 
-    authenticate({ authMode, username, password, name })
+    authenticate({ authMode, username, email, password, name })
       .then(data => {
-        const newUser = { username: data.user.username, name: data.user.name, token: data.token };
+        const newUser = {
+          username: data.user.username,
+          name: data.user.name,
+          email: data.user.email || '',
+          token: data.token,
+        };
         localStorage.setItem('dsa_session', JSON.stringify(newUser));
         
         if (syncProgress) {
@@ -67,7 +73,7 @@ export default function useAuth() {
     setUser(null);
   };
 
-  const handleUpdateProfile = async ({ name, username, password }) => {
+  const handleUpdateProfile = async ({ name, username, email, password }) => {
     if (user?.isGuest || user?.username === 'guest') {
       throw new Error('Guest profile cannot be modified. Please log in or register an account.');
     }
@@ -76,6 +82,7 @@ export default function useAuth() {
       token: user?.token,
       name,
       username,
+      email: email || undefined,
       password: password || undefined,
     });
 
@@ -83,6 +90,7 @@ export default function useAuth() {
       ...user,
       username: res.user.username,
       name: res.user.name,
+      email: res.user.email || '',
       token: res.token || user.token,
     };
     setUser(updatedUser);
@@ -92,6 +100,14 @@ export default function useAuth() {
       message: res.message || 'Profile updated successfully!',
       user: updatedUser,
     };
+  };
+
+  const handleDeleteAccount = async () => {
+    if (user?.isGuest || user?.username === 'guest') {
+      throw new Error('Guest account cannot be deleted.');
+    }
+    await deleteAccount(user?.token);
+    handleLogout();
   };
 
   return {
@@ -108,5 +124,6 @@ export default function useAuth() {
     handleAuth,
     handleLogout,
     handleUpdateProfile,
+    handleDeleteAccount,
   };
 }

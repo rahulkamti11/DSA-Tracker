@@ -13,7 +13,7 @@ import {
   LogIn,
 } from 'lucide-react';
 
-export default function SettingsTab({ active, user, onUpdateProfile, openAuthModal }) {
+export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAccount, openAuthModal }) {
   const { themeMode, setTheme } = useTheme();
 
   const isGuest = !user || user.isGuest || user.username === 'guest';
@@ -21,11 +21,13 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'error', text: string }
 
   const [formData, setFormData] = useState({
     name: user?.name || (isGuest ? 'Guest User' : ''),
     username: user?.username || (isGuest ? 'guest' : ''),
+    email: user?.email || '',
     password: '',
   });
 
@@ -36,6 +38,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
     setFormData({
       name: user?.name || (isGuest ? 'Guest User' : ''),
       username: user?.username || (isGuest ? 'guest' : ''),
+      email: user?.email || '',
       password: '',
     });
     setIsEditing(false);
@@ -65,6 +68,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
     setFormData({
       name: user?.name || '',
       username: user?.username || '',
+      email: user?.email || '',
       password: '',
     });
     setStatusMessage(null);
@@ -95,6 +99,18 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
       return;
     }
 
+    if (formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        setStatusMessage({ type: 'error', text: 'Please enter a valid email address.' });
+        return;
+      }
+      if (formData.email.trim().length > 50) {
+        setStatusMessage({ type: 'error', text: 'Email cannot exceed 50 characters.' });
+        return;
+      }
+    }
+
     if (formData.password.trim()) {
       if (formData.password.trim().length < 4 || formData.password.trim().length > 10) {
         setStatusMessage({ type: 'error', text: 'New Password must be between 4 and 10 characters.' });
@@ -110,6 +126,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
         const res = await onUpdateProfile({
           name: formData.name.trim(),
           username: formData.username.trim(),
+          email: formData.email.trim(),
           password: formData.password.trim() || undefined,
         });
 
@@ -307,6 +324,45 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
               </p>
             </div>
 
+            {/* Email Address */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                  Email Address
+                </label>
+                {/* Character limit shown ONLY while editing */}
+                {isEditing ? (
+                  <span className="text-[10px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
+                    {formData.email.length}/50
+                  </span>
+                ) : isGuest ? (
+                  <span className="text-[10px] text-slate-400 font-mono">None (Guest)</span>
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                    <Shield size={10} /> Private
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type="email"
+                  disabled={!isEditing}
+                  maxLength={50}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder={isGuest ? 'No email linked in guest mode' : 'e.g. rahul@example.com'}
+                  className={`w-full p-2.5 rounded-xl text-sm transition-all outline-none ${
+                    isEditing
+                      ? 'bg-slate-50 dark:bg-slate-950 border-2 border-sky-500 text-slate-900 dark:text-slate-100 shadow-xs'
+                      : 'bg-slate-100/70 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 cursor-not-allowed'
+                  }`}
+                />
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">
+                Used for account recovery and logging in. Never shared or sold.
+              </p>
+            </div>
+
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -485,6 +541,40 @@ export default function SettingsTab({ active, user, onUpdateProfile, openAuthMod
                   Register Free Account to Enable Cloud Sync
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Account Privacy & Deletion (DPDP & GDPR Compliance) */}
+          {!isGuest && (
+            <div className="bg-rose-500/5 border border-rose-500/20 p-5 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
+                <Shield size={14} />
+                <span>Data Privacy & Account Erasure</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Under the DPDP Act and GDPR ("Right to be Forgotten"), you can permanently erase your account, email address, problem sets, and revision records from our edge database.
+              </p>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={async () => {
+                  if (window.confirm('Are you absolutely sure you want to permanently delete your account and all associated data? This action cannot be undone.')) {
+                    try {
+                      setDeleting(true);
+                      if (onDeleteAccount) {
+                        await onDeleteAccount();
+                      }
+                    } catch (err) {
+                      setStatusMessage({ type: 'error', text: err?.message || 'Failed to delete account.' });
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-bold transition-all text-center cursor-pointer disabled:opacity-50"
+              >
+                {deleting ? 'Deleting Data...' : 'Permanently Delete Account & Data'}
+              </button>
             </div>
           )}
         </div>

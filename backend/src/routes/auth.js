@@ -10,21 +10,32 @@ import {
 
 const authRoutes = new Hono();
 
+// Helper to validate email format
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email.trim().toLowerCase());
+}
+
 // POST /register
 authRoutes.post('/register', async (c) => {
   try {
     const db = c.env.DB;
     const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
-    const { username, password, name } = await c.req.json();
+    const { username, email, password, name } = await c.req.json();
 
-    if (!username || !password || !name) {
-      return c.json({ message: 'Please enter all fields.' }, 400);
+    if (!username || !email || !password || !name) {
+      return c.json({ message: 'Please enter all fields (Name, Email, Username, Password).' }, 400);
     }
     if (name.trim().length > 20) {
       return c.json({ message: 'Display Name cannot exceed 20 characters.' }, 400);
     }
     if (username.trim().length > 20) {
       return c.json({ message: 'Username cannot exceed 20 characters.' }, 400);
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    if (!isValidEmail(cleanEmail) || cleanEmail.length > 50) {
+      return c.json({ message: 'Please enter a valid email address (max 50 chars).' }, 400);
     }
     if (password.length > 10) {
       return c.json({ message: 'Password cannot exceed 10 characters.' }, 400);
@@ -34,6 +45,8 @@ authRoutes.post('/register', async (c) => {
     }
 
     const cleanUsername = username.toLowerCase().trim();
+    
+    // Check if username already exists
     const existingUser = await db.prepare(
       `SELECT id FROM users WHERE username = ?`
     ).bind(cleanUsername).first();
@@ -42,12 +55,21 @@ authRoutes.post('/register', async (c) => {
       return c.json({ message: 'Username already exists.' }, 400);
     }
 
+    // Check if email already exists
+    const existingEmail = await db.prepare(
+      `SELECT id FROM users WHERE email = ?`
+    ).bind(cleanEmail).first();
+
+    if (existingEmail) {
+      return c.json({ message: 'Email is already registered. Please log in.' }, 400);
+    }
+
     const userId = crypto.randomUUID();
     const hashedPassword = await hashPassword(password);
 
     await db.prepare(
-      `INSERT INTO users (id, username, password, name) VALUES (?, ?, ?, ?)`
-    ).bind(userId, cleanUsername, hashedPassword, name.trim()).run();
+      `INSERT INTO users (id, username, email, password, name) VALUES (?, ?, ?, ?, ?)`
+    ).bind(userId, cleanUsername, cleanEmail, hashedPassword, name.trim()).run();
 
     // Create default collections (only Starred)
     await db.prepare(
@@ -61,6 +83,7 @@ authRoutes.post('/register', async (c) => {
         id: userId,
         _id: userId,
         username: cleanUsername,
+        email: cleanEmail,
         name: name.trim(),
       },
     });
@@ -79,17 +102,18 @@ authRoutes.post('/login', async (c) => {
     if (!username || !password) {
       return c.json({ message: 'Please enter all fields.' }, 400);
     }
-    if (username.length > 20 || password.length > 10) {
-      return c.json({ message: 'Invalid credentials. Username max 20, password max 10 characters.' }, 400);
+    if (username.length > 50 || password.length > 10) {
+      return c.json({ message: 'Invalid credentials. Username/email max 50, password max 10 characters.' }, 400);
     }
 
-    const cleanUsername = username.toLowerCase().trim();
+    const cleanIdentifier = username.toLowerCase().trim();
+    // Allow login by Username OR Email
     const user = await db.prepare(
-      `SELECT * FROM users WHERE username = ?`
-    ).bind(cleanUsername).first();
+      `SELECT * FROM users WHERE username = ? OR email = ?`
+    ).bind(cleanIdentifier, cleanIdentifier).first();
 
     if (!user) {
-      return c.json({ message: 'No account with this username has been registered.' }, 400);
+      return c.json({ message: 'No account found with this username or email.' }, 400);
     }
 
     const isMatch = await comparePassword(password, user.password);
@@ -115,6 +139,7 @@ authRoutes.post('/login', async (c) => {
         id: user.id,
         _id: user.id,
         username: user.username,
+        email: user.email || '',
         name: user.name,
         activity,
       },
@@ -169,6 +194,7 @@ authRoutes.get('/me', authMiddleware, async (c) => {
       id: user.id,
       _id: user.id,
       username: user.username,
+      email: user.email || '',
       name: user.name,
       activity,
     });
@@ -199,6 +225,7 @@ authRoutes.put('/me', authMiddleware, async (c) => {
 
     let updatedName = user.name;
     let updatedUsername = user.username;
+    let updatedEmail = user.email || '';
     let updatedPassword = user.password;
 
     if (name && name.trim()) {
@@ -224,6 +251,21 @@ authRoutes.put('/me', authMiddleware, async (c) => {
       updatedUsername = cleanUser;
     }
 
+    const { email } = await c.req.json().catch(() => ({}));
+    if (email && email.trim() && email.toLowerCase().trim() !== (user.email || '').toLowerCase()) {
+      const cleanEmail = email.toLowerCase().trim();
+      if (!isValidEmail(cleanEmail) || cleanEmail.length > 50) {
+        return c.json({ message: 'Please enter a valid email address (max 50 chars).' }, 400);
+      }
+      const existingEmail = await db.prepare(
+        `SELECT id FROM users WHERE email = ? AND id != ?`
+      ).bind(cleanEmail, userId).first();
+      if (existingEmail) {
+        return c.json({ message: 'Email is already in use by another account.' }, 400);
+      }
+      updatedEmail = cleanEmail;
+    }
+
     if (password && password.trim()) {
       if (password.trim().length < 4 || password.trim().length > 10) {
         return c.json({ message: 'Password must be between 4 and 10 characters.' }, 400);
@@ -232,8 +274,8 @@ authRoutes.put('/me', authMiddleware, async (c) => {
     }
 
     await db.prepare(
-      `UPDATE users SET name = ?, username = ?, password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-    ).bind(updatedName, updatedUsername, updatedPassword, userId).run();
+      `UPDATE users SET name = ?, username = ?, email = ?, password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+    ).bind(updatedName, updatedUsername, updatedEmail, updatedPassword, userId).run();
 
     const activity = await fetchUserActivityMap(db, userId);
     const token = await createToken({ id: userId }, jwtSecret);
@@ -244,6 +286,7 @@ authRoutes.put('/me', authMiddleware, async (c) => {
         id: userId,
         _id: userId,
         username: updatedUsername,
+        email: updatedEmail,
         name: updatedName,
         activity,
       },
@@ -321,6 +364,37 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
     await resetGuestProfile(db, guestUser.id);
 
     return c.json({ message: 'Guest data successfully migrated to user profile.' });
+  } catch (err) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// DELETE /me (Right to be Forgotten / Data Compliance)
+authRoutes.delete('/me', authMiddleware, async (c) => {
+  try {
+    const db = c.env.DB;
+    const userId = c.get('userId');
+
+    const user = await db.prepare(
+      `SELECT * FROM users WHERE id = ?`
+    ).bind(userId).first();
+
+    if (!user) {
+      return c.json({ message: 'User not found' }, 404);
+    }
+
+    if (user.username === 'guest') {
+      return c.json({ message: 'Guest account cannot be deleted.' }, 403);
+    }
+
+    // Cascade deletes handle user_activity, collections, etc.
+    // Explicit cleanup for problems and tags for complete hygiene
+    await db.prepare(`DELETE FROM problems WHERE user_id = ?`).bind(userId).run();
+    await db.prepare(`DELETE FROM collections WHERE user_id = ?`).bind(userId).run();
+    await db.prepare(`DELETE FROM user_activity WHERE user_id = ?`).bind(userId).run();
+    await db.prepare(`DELETE FROM users WHERE id = ?`).bind(userId).run();
+
+    return c.json({ message: 'Your account and all associated data have been permanently deleted.' });
   } catch (err) {
     return c.json({ error: err.message }, 500);
   }

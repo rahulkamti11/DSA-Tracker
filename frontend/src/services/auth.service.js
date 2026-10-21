@@ -2,11 +2,15 @@ import { apiRequest, buildAuthHeaders } from './api';
 
 export const guestLogin = () => apiRequest('/auth/guest-login', { method: 'POST' });
 
-export const authenticate = ({ authMode, username, password, name }) =>
+export const authenticate = ({ authMode, username, email, password, name }) =>
   apiRequest(authMode === 'register' ? '/auth/register' : '/auth/login', {
     method: 'POST',
     headers: buildAuthHeaders(),
-    body: JSON.stringify(authMode === 'register' ? { username, password, name } : { username, password }),
+    body: JSON.stringify(
+      authMode === 'register'
+        ? { username, email, password, name }
+        : { username, password }
+    ),
   });
 
 export const fetchProfile = (token) =>
@@ -14,11 +18,17 @@ export const fetchProfile = (token) =>
     headers: buildAuthHeaders(token, false),
   });
 
-export const updateProfile = ({ token, name, username, password }) =>
+export const updateProfile = ({ token, name, username, email, password }) =>
   apiRequest('/auth/me', {
     method: 'PUT',
     headers: buildAuthHeaders(token),
-    body: JSON.stringify({ name, username, password }),
+    body: JSON.stringify({ name, username, email, password }),
+  });
+
+export const deleteAccount = (token) =>
+  apiRequest('/auth/me', {
+    method: 'DELETE',
+    headers: buildAuthHeaders(token),
   });
 
 export const logActivity = (token) =>
