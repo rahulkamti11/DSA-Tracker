@@ -22,8 +22,8 @@ export default function ProblemFormDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-[3px] z-50 flex items-center justify-center p-0 sm:p-4 animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-none sm:rounded-2xl w-full max-w-3xl h-[100dvh] sm:h-[650px] max-h-none sm:max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+    <div className="fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:inset-0 sm:bottom-0 bg-slate-950/60 backdrop-blur-[3px] z-45 flex items-center justify-center p-0 sm:p-4 animate-in fade-in">
+      <div className="bg-slate-900 border-x-0 sm:border border-slate-800 rounded-none sm:rounded-2xl w-full max-w-3xl h-full sm:h-[650px] max-h-none sm:max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
         {/* Responsive Header */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center p-3.5 sm:p-6 border-b border-slate-800 bg-slate-900/90 rounded-none sm:rounded-t-2xl relative shrink-0 gap-3">
           <div className="flex items-center justify-between">
