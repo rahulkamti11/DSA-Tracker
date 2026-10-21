@@ -19,7 +19,7 @@ export default function ProblemDetailDialog({
   const collection = detailModal.collId ? collections.find((item) => item.id === detailModal.collId) : null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
       <div className="bg-slate-900 border border-slate-800 p-4 sm:p-8 rounded-xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col shadow-2xl">
         <div className="flex justify-between items-start mb-4 sm:mb-6 border-b border-slate-800 pb-3 sm:pb-4 gap-2">
           <div className="min-w-0 flex-1">
