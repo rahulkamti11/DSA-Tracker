@@ -17,18 +17,9 @@ import {
   Layers,
   Activity,
   CheckCircle2,
-  AlertTriangle,
+  Terminal,
 } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics.js';
-
-function GithubIcon({ size = 16, className = '' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-      <path d="M9 18c-4.51 2-5-2-7-2" />
-    </svg>
-  );
-}
 
 export default function MoreTab({ active, user, initialSection = 'feedback' }) {
   const [activeSection, setActiveSection] = useState(initialSection);
@@ -92,7 +83,7 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
             User Feedback & Feature Requests
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
-            We are building an interactive voting board where you can propose new algorithmic collections, suggest SRS interval enhancements, and upvote community features.
+            We are building an interactive voting board where you can propose new algorithmic collections, suggest SRS interval enhancements, and upvote community feature requests.
           </p>
         </div>
       )}
@@ -111,19 +102,8 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
             Direct Bug & Issue Reporter
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
-            An automated crash diagnostics and edge log submitter is on the way. In the meantime, you can file bug tickets directly on our GitHub Issues page.
+            An automated crash diagnostics and edge log submitter is currently in development. Direct in-app bug filing with screenshot capture will be available in an upcoming update.
           </p>
-          <div className="pt-2">
-            <a
-              href="https://github.com/rahulkamti11/DSA-Tracker/issues"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors border border-slate-200 dark:border-slate-700"
-            >
-              <GithubIcon size={15} />
-              <span>Report on GitHub Issues</span>
-            </a>
-          </div>
         </div>
       )}
 
@@ -207,7 +187,7 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Terms of Service</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Guidelines for using DSA Tracker educational productivity software.
+                Guidelines and acceptable use policies for DSA Tracker.
               </p>
             </div>
           </div>
@@ -216,14 +196,14 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
               <h4 className="font-bold text-slate-900 dark:text-slate-100">1. Acceptance of Terms</h4>
               <p className="text-slate-500 dark:text-slate-400">
-                By accessing or registering an account on DSA Tracker, you acknowledge and agree to comply with these terms. DSA Tracker is an open-source, non-commercial software product created to assist developers and students in algorithmic interview preparation.
+                By accessing or registering an account on DSA Tracker, you acknowledge and agree to comply with these terms. DSA Tracker is a web application and personal productivity tool created to assist developers and students in algorithmic interview preparation and spaced repetition practice.
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
               <h4 className="font-bold text-slate-900 dark:text-slate-100">2. Fair Use & Prohibited Conduct</h4>
               <p className="text-slate-500 dark:text-slate-400">
-                Users agree not to disrupt the serverless infrastructure, abuse rate limits, attempt unauthorized access to other accounts, or use automated scripts to spam registration.
+                Users agree not to disrupt the serverless infrastructure, abuse rate limits, attempt unauthorized access to other accounts, reverse-engineer proprietary application logic, or use automated scripts to spam registration.
               </p>
             </div>
 
@@ -293,7 +273,7 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
         </div>
       )}
 
-      {/* SECTION 6: ABOUT (Comprehensive & Descriptive) */}
+      {/* SECTION 6: ABOUT (Descriptive & Professional) */}
       {activeSection === 'about' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-200">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -358,7 +338,7 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
               <div>• <strong>Intelligent SRS Queue:</strong> Due-today revision queue with overdue detection.</div>
-              <div>• <strong>Activity Heatmap:</strong> GitHub-style continuous practice visualization.</div>
+              <div>• <strong>Activity Heatmap:</strong> Year-round continuous practice visualization.</div>
               <div>• <strong>Curated Collections:</strong> Blind 75, NeetCode 150, Top Interview 150.</div>
               <div>• <strong>Zero Ads & Pure Privacy:</strong> DPDP & GDPR compliant data architecture.</div>
             </div>
@@ -370,15 +350,9 @@ export default function MoreTab({ active, user, initialSection = 'feedback' }) {
               <Heart size={13} className="text-rose-500 fill-rose-500" />
               <span>by <strong>Rahul Kamti</strong></span>
             </div>
-            <a
-              href="https://github.com/rahulkamti11/DSA-Tracker"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-400 font-medium"
-            >
-              <GithubIcon size={14} />
-              <span>github.com/rahulkamti11/DSA-Tracker</span>
-            </a>
+            <div className="text-[11px] font-mono text-slate-400">
+              DSA Tracker • All Rights Reserved
+            </div>
           </div>
         </div>
       )}
