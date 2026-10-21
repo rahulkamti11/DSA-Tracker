@@ -18,6 +18,7 @@ import Badge from '../components/ui/Badge.jsx';
 import { CustomFilterSelect, CustomHeaderSelect } from '../components/ui/Selects.jsx';
 import { formatDate } from '../utils/date.js';
 import { getPlatformInfo, getRealUrl } from '../utils/platform.js';
+import { triggerHaptic } from '../utils/haptics.js';
 
 export default function ProblemsTab({
   active,
@@ -318,8 +319,8 @@ export default function ProblemsTab({
         <table className="min-w-[860px] w-full text-left text-sm">
           <thead className="bg-slate-950/80 text-slate-500 font-mono text-[10px] uppercase tracking-widest border-b border-slate-800">
             <tr>
-              <th className="py-3 px-2 rounded-tl-xl w-10 text-center">#</th>
-              <th className="py-3 px-2 w-8 text-center">
+              <th className="py-3 px-2 rounded-tl-xl w-10 text-center sticky left-0 z-20 bg-slate-950">#</th>
+              <th className="py-3 px-2 w-8 text-center sticky left-10 z-20 bg-slate-950">
                 <Tooltip
                   content={
                     starFilter === 'all'
@@ -345,7 +346,7 @@ export default function ProblemsTab({
                   </button>
                 </Tooltip>
               </th>
-              <th className="py-3 px-2 max-w-[200px]">Name</th>
+              <th className="py-3 px-2 max-w-[200px] min-w-[170px] sticky left-[72px] z-20 bg-slate-950 border-r border-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.35)]">Name</th>
               <th className="py-3 px-2 w-28 text-center">
                 <CustomHeaderSelect
                   value={filters.diff}
@@ -399,18 +400,18 @@ export default function ProblemsTab({
             ) : (
               filteredProblems.map((problem, index) => (
                 <tr key={problem.id} className="hover:bg-slate-800/30 transition-colors group">
-                  <td className="py-3 px-2 text-slate-600 font-mono text-xs text-center">{String(index + 1).padStart(3, '0')}</td>
-                  <td className="py-3 px-2 text-center">
+                  <td className="py-3 px-2 text-slate-600 font-mono text-xs text-center sticky left-0 z-10 bg-slate-900 group-hover:bg-slate-800 transition-colors">{String(index + 1).padStart(3, '0')}</td>
+                  <td className="py-3 px-2 text-center sticky left-10 z-10 bg-slate-900 group-hover:bg-slate-800 transition-colors">
                     <Tooltip content={problem.starred ? 'Starred' : 'Star Problem'}>
-                      <button onClick={() => toggleStar(problem.id)} className="focus:outline-none flex items-center justify-center w-full">
+                      <button onClick={() => { triggerHaptic(12); toggleStar(problem.id); }} className="focus:outline-none flex items-center justify-center w-full">
                         <Star size={16} className={`transition-colors ${problem.starred ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_5px_rgba(251,146,60,0.5)]' : 'text-slate-600 hover:text-slate-400'}`} />
                       </button>
                     </Tooltip>
                   </td>
-                  <td className="py-3 px-2 max-w-[200px] whitespace-normal">
+                  <td className="py-3 px-2 max-w-[200px] min-w-[170px] whitespace-normal sticky left-[72px] z-10 bg-slate-900 group-hover:bg-slate-800 border-r border-slate-800 shadow-[4px_0_10px_rgba(0,0,0,0.35)] transition-colors">
                     <div className="font-bold text-slate-200 text-sm line-clamp-2 break-words leading-tight" title={problem.name}>{problem.name}</div>
                     {problem.collId && collections.find((collection) => collection.id === problem.collId) && (
-                      <div className="flex items-center gap-1.5 mt-1.5">
+                      <div className="hidden md:flex items-center gap-1.5 mt-1.5">
                         <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded flex items-center gap-1.5 text-[10px] font-bold tracking-widest"><FolderHeart size={10} /> {collections.find((collection) => collection.id === problem.collId).name}</span>
                       </div>
                     )}

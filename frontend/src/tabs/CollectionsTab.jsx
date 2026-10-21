@@ -2,6 +2,7 @@ import { Star, Pencil, Trash, ArrowLeft } from 'lucide-react';
 import Tooltip from '../components/ui/Tooltip.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import { getPlatformInfo, getRealUrl } from '../utils/platform.js';
+import { triggerHaptic } from '../utils/haptics.js';
 import { updateProblem, mapProblem } from '../services/problems.service.js';
 
 export default function CollectionsTab({
@@ -57,7 +58,7 @@ export default function CollectionsTab({
           <table className="min-w-[760px] w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-950/80 text-slate-500 font-mono text-[10px] uppercase tracking-widest border-b border-slate-800">
               <tr>
-                <th className="p-4 rounded-tl-xl">Name</th>
+                <th className="p-4 rounded-tl-xl sticky left-0 z-20 bg-slate-950 border-r border-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.35)]">Name</th>
                 <th className="p-4">Platforms</th>
                 <th className="p-4">Tags</th>
                 <th className="p-4">Diff</th>
@@ -77,8 +78,8 @@ export default function CollectionsTab({
               ) : (
                 list.map((problem) => (
                   <tr key={problem.id} className="hover:bg-slate-800/30 transition-colors group">
-                    <td className="p-4 font-bold text-slate-200 text-[15px] flex items-center gap-2">
-                      <button onClick={() => toggleStar(problem.id)} className="focus:outline-none">
+                    <td className="p-4 font-bold text-slate-200 text-[15px] flex items-center gap-2 sticky left-0 z-10 bg-slate-900 group-hover:bg-slate-800 border-r border-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.35)] transition-colors">
+                      <button onClick={() => { triggerHaptic(12); toggleStar(problem.id); }} className="focus:outline-none">
                         <Star size={16} className={`transition-colors ${problem.starred ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_5px_rgba(251,146,60,0.5)]' : 'text-slate-600 hover:text-slate-400'}`} />
                       </button>
                       <span>{problem.name}</span>
