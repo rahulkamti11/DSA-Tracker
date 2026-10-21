@@ -72,39 +72,58 @@ export default function useAnimatedFavicon(enabled = true, intervalMs = 90) {
 
     const defaultFavicon = link.href || '/favicon.svg';
     let frame = 0;
-    let timer = null;
 
-    const tick = () => {
-      if (document.hidden) return; // Pause while user is on another tab to save battery
+    const advanceFrame = () => {
       link.href = precomputedFrames[frame];
       frame = (frame + 1) % TOTAL_FRAMES;
     };
 
-    const start = () => {
-      if (!timer) timer = setInterval(tick, intervalMs);
-    };
+    // Use a Web Worker blob ticker so animation continues reliably
+    // even when the tab is hidden / inactive in the background without browser throttling.
+    let worker = null;
+    let fallbackTimer = null;
+    let workerUrl = null;
 
-    const stop = () => {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-    };
+    try {
+      const workerBlob = new Blob(
+        [
+          `let timer = null;
+          self.onmessage = function(e) {
+            if (e.data === 'start') {
+              if (timer) clearInterval(timer);
+              timer = setInterval(function() {
+                self.postMessage('tick');
+              }, ${intervalMs});
+            } else if (e.data === 'stop') {
+              if (timer) clearInterval(timer);
+              timer = null;
+            }
+          };`
+        ],
+        { type: 'application/javascript' }
+      );
+      workerUrl = URL.createObjectURL(workerBlob);
+      worker = new Worker(workerUrl);
 
-    const handleVisibility = () => {
-      if (document.hidden) {
-        stop();
-      } else {
-        start();
-      }
-    };
+      worker.onmessage = () => {
+        advanceFrame();
+      };
 
-    start();
-    document.addEventListener('visibilitychange', handleVisibility);
+      worker.postMessage('start');
+    } catch {
+      // Fallback timer if Workers are blocked
+      fallbackTimer = setInterval(advanceFrame, intervalMs);
+    }
 
     return () => {
-      stop();
-      document.removeEventListener('visibilitychange', handleVisibility);
+      if (worker) {
+        worker.postMessage('stop');
+        worker.terminate();
+        if (workerUrl) URL.revokeObjectURL(workerUrl);
+      }
+      if (fallbackTimer) {
+        clearInterval(fallbackTimer);
+      }
       if (link) link.href = defaultFavicon;
     };
   }, [enabled, intervalMs]);
