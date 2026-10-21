@@ -384,12 +384,20 @@ export default function App() {
           <MobileBottomNav
             view={view}
             setView={(v) => {
+              setProbModal({ open: false, id: null });
               setView(v);
               setSidebarOpen(false);
             }}
             dueCount={dueCount}
-            onOpenMenu={() => setSidebarOpen(true)}
-            onAddProblem={() => openAddModal()}
+            trashCount={trash.length}
+            isAddOpen={probModal.open}
+            onAddProblem={() => {
+              if (probModal.open) {
+                setProbModal({ open: false, id: null });
+              } else {
+                openAddModal();
+              }
+            }}
           />
         )}
         sidebar={(
@@ -468,8 +476,10 @@ export default function App() {
         topbar={(
           <Topbar>
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <button className="md:hidden text-slate-400 hover:text-slate-200 p-1.5 -ml-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0" onClick={() => setSidebarOpen(true)} title="Open Navigation"><Menu size={22} /></button>
-              <h2 className="text-sm sm:text-lg font-bold capitalize truncate text-slate-800 dark:text-slate-100">{view.replace('-', ' ')}</h2>
+              <span className="md:hidden text-base font-black tracking-wider uppercase text-slate-100 font-sans">
+                DSA TRACKER
+              </span>
+              <h2 className="hidden md:block text-lg font-bold capitalize truncate text-slate-800 dark:text-slate-100">{view.replace('-', ' ')}</h2>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 shrink-0">
               <Tooltip content="Keyboard Shortcuts">
