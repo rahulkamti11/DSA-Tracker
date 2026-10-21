@@ -1,20 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MessageSquarePlus,
-  Mail,
+  Bug,
   ShieldCheck,
   Scale,
+  HelpCircle,
   Info,
-  Send,
-  Star,
-  CheckCircle2,
-  ExternalLink,
+  Clock,
   Lock,
   Database,
   Cpu,
   Heart,
-  HelpCircle,
   FileText,
+  Sparkles,
+  BookOpen,
+  Layers,
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics.js';
 
@@ -27,72 +30,29 @@ function GithubIcon({ size = 16, className = '' }) {
   );
 }
 
-export default function MoreTab({ active, user }) {
-  const [activeSection, setActiveSection] = useState('feedback');
+export default function MoreTab({ active, user, initialSection = 'feedback' }) {
+  const [activeSection, setActiveSection] = useState(initialSection);
 
-  // Feedback form state
-  const [feedbackType, setFeedbackType] = useState('feature');
-  const [rating, setRating] = useState(5);
-  const [message, setMessage] = useState('');
-  const [email, setEmail] = useState(user?.username && !user.isGuest ? `${user.username}@user.com` : '');
-  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   if (!active) return null;
 
   const sections = [
     { id: 'feedback', label: 'Feedback', icon: MessageSquarePlus },
-    { id: 'contact', label: 'Contact', icon: Mail },
-    { id: 'privacy', label: 'Privacy', icon: ShieldCheck },
-    { id: 'legal', label: 'Legal', icon: Scale },
+    { id: 'report', label: 'Report', icon: Bug },
+    { id: 'privacy', label: 'Privacy Policy', icon: ShieldCheck },
+    { id: 'terms', label: 'Terms of Service', icon: Scale },
+    { id: 'help', label: 'Help', icon: HelpCircle },
     { id: 'about', label: 'About', icon: Info },
   ];
 
-  const handleFeedbackSubmit = (e) => {
-    e.preventDefault();
-    if (!message.trim()) return;
-
-    triggerHaptic(15);
-    const feedbackEntry = {
-      id: Date.now(),
-      type: feedbackType,
-      rating,
-      message: message.trim(),
-      email: email.trim() || 'anonymous',
-      date: new Date().toISOString(),
-    };
-
-    try {
-      const existing = JSON.parse(localStorage.getItem('dsa_feedback_history') || '[]');
-      existing.unshift(feedbackEntry);
-      localStorage.setItem('dsa_feedback_history', JSON.stringify(existing.slice(0, 20)));
-    } catch {
-      // Ignore storage errors
-    }
-
-    setSubmitted(true);
-    setTimeout(() => {
-      setMessage('');
-      setSubmitted(false);
-    }, 4500);
-  };
-
   return (
     <div className="animate-in fade-in space-y-4 sm:space-y-6 max-w-5xl pb-12">
-      {/* Header Banner */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-sky-400">
-              More Information & Resources
-            </h2>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Privacy policy, legal notices, contact info, and submit your feedback to help improve DSA Tracker.
-          </p>
-        </div>
-      </div>
-
-      {/* Segmented Section Navigation */}
+      {/* Segmented Section Navigation directly at the top */}
       <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-200 dark:border-slate-800">
         {sections.map((section) => {
           const Icon = section.icon;
@@ -105,7 +65,7 @@ export default function MoreTab({ active, user }) {
                 triggerHaptic(10);
                 setActiveSection(section.id);
               }}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 select-none ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 select-none cursor-pointer ${
                 isActive
                   ? 'bg-sky-500 text-slate-950 shadow-sm shadow-sky-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
@@ -118,355 +78,307 @@ export default function MoreTab({ active, user }) {
         })}
       </div>
 
-      {/* SECTION 1: FEEDBACK */}
+      {/* SECTION 1: FEEDBACK (Coming Soon) */}
       {activeSection === 'feedback' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80">
-              <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
-                <MessageSquarePlus size={18} />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Send Feedback & Suggestions</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">We continuously refine DSA Tracker based on your user experience.</p>
-              </div>
-            </div>
-
-            {submitted ? (
-              <div className="p-8 text-center bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-3 animate-in zoom-in-95 duration-200">
-                <CheckCircle2 size={40} className="text-emerald-400 mx-auto" />
-                <h4 className="text-base font-bold text-emerald-400">Thank You For Your Feedback!</h4>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  Your suggestions help shape future releases. Your thoughts have been logged locally and sent to our team.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                {/* Feedback Type */}
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                    Feedback Category
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      { id: 'feature', label: 'Feature Request' },
-                      { id: 'bug', label: 'Bug Report' },
-                      { id: 'ui', label: 'UI / UX Polish' },
-                      { id: 'general', label: 'General Praise' },
-                    ].map((type) => (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => setFeedbackType(type.id)}
-                        className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all text-center ${
-                          feedbackType === type.id
-                            ? 'bg-sky-500/15 border-sky-500/50 text-sky-400 font-bold'
-                            : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        {type.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Rating */}
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                    Rate Your Experience
-                  </label>
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => {
-                          triggerHaptic(10);
-                          setRating(star);
-                        }}
-                        className="p-1 transition-transform hover:scale-110 active:scale-95 focus:outline-none"
-                      >
-                        <Star
-                          size={24}
-                          className={`${
-                            star <= rating
-                              ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.4)]'
-                              : 'text-slate-300 dark:text-slate-700'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 ml-2">
-                      {rating === 5 ? 'Exceptional' : rating === 4 ? 'Great' : rating === 3 ? 'Good' : 'Needs Work'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Message */}
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Your Message / Suggestions
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Tell us what you love or what we could improve..."
-                    required
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all"
-                  />
-                </div>
-
-                {/* Optional Email */}
-                <div>
-                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Email Address (Optional, if you would like a reply)
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full sm:w-80 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all"
-                  />
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 active:scale-95 transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] cursor-pointer"
-                  >
-                    <Send size={15} />
-                    <span>Submit Feedback</span>
-                  </button>
-
-                  <a
-                    href={`mailto:rahulkamti11@gmail.com?subject=DSA%20Tracker%20Feedback%20(${feedbackType})&body=${encodeURIComponent(message)}`}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700/60"
-                  >
-                    <Mail size={15} />
-                    <span>Send via Email Client</span>
-                  </a>
-                </div>
-              </form>
-            )}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center shadow-sm space-y-4 animate-in fade-in duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 text-sky-500 mx-auto flex items-center justify-center font-bold">
+            <MessageSquarePlus size={32} />
           </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+            <Clock size={13} />
+            <span>Coming Soon</span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            User Feedback & Feature Requests
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+            We are building an interactive voting board where you can propose new algorithmic collections, suggest SRS interval enhancements, and upvote community features.
+          </p>
         </div>
       )}
 
-      {/* SECTION 2: CONTACT */}
-      {activeSection === 'contact' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
-                  <Mail size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Get in Touch</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Direct developer inquiries & collaboration</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-xs font-mono uppercase text-slate-400 block mb-0.5">Primary Support</span>
-                  <a
-                    href="mailto:rahulkamti11@gmail.com"
-                    className="text-sky-500 dark:text-sky-400 hover:underline font-semibold flex items-center gap-1.5"
-                  >
-                    <span>rahulkamti11@gmail.com</span>
-                    <ExternalLink size={13} />
-                  </a>
-                </div>
-
-                <div>
-                  <span className="text-xs font-mono uppercase text-slate-400 block mb-0.5">Author & Maintainer</span>
-                  <span className="text-slate-800 dark:text-slate-200 font-semibold">Rahul Kamti</span>
-                </div>
-
-                <div>
-                  <span className="text-xs font-mono uppercase text-slate-400 block mb-0.5">Project Repository</span>
-                  <a
-                    href="https://github.com/rahulkamti11/DSA-Tracker"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sky-500 dark:text-sky-400 hover:underline font-semibold flex items-center gap-1.5"
-                  >
-                    <GithubIcon size={14} />
-                    <span>github.com/rahulkamti11/DSA-Tracker</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">
-                  <HelpCircle size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Community & Issues</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Open-source contributions and issue tracking</p>
-                </div>
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Found a bug or want to request an algorithmic collection like Blind 75, NeetCode 150, or Striver SDE Sheet?
-                Feel free to open an issue or pull request on GitHub!
-              </p>
-
-              <a
-                href="https://github.com/rahulkamti11/DSA-Tracker/issues"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors border border-slate-200 dark:border-slate-700"
-              >
-                <GithubIcon size={14} />
-                <span>Open GitHub Issue</span>
-              </a>
-            </div>
+      {/* SECTION 2: REPORT (Coming Soon) */}
+      {activeSection === 'report' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center shadow-sm space-y-4 animate-in fade-in duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 mx-auto flex items-center justify-center font-bold">
+            <Bug size={32} />
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+            <Clock size={13} />
+            <span>Coming Soon</span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            Direct Bug & Issue Reporter
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+            An automated crash diagnostics and edge log submitter is on the way. In the meantime, you can file bug tickets directly on our GitHub Issues page.
+          </p>
+          <div className="pt-2">
+            <a
+              href="https://github.com/rahulkamti11/DSA-Tracker/issues"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors border border-slate-200 dark:border-slate-700"
+            >
+              <GithubIcon size={15} />
+              <span>Report on GitHub Issues</span>
+            </a>
           </div>
         </div>
       )}
 
       {/* SECTION 3: PRIVACY POLICY */}
       {activeSection === 'privacy' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-200">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-200">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
               <ShieldCheck size={22} />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">Privacy Policy</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Your data belongs to you. Zero tracking, zero telemetry selling.</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Privacy Policy</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Transparent data practices compliant with DPDP Act 2023 & GDPR standards.
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-sky-400 font-bold text-sm">
-                <Database size={16} />
-                <span>Local-First & Client Storage</span>
+          <div className="space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Database size={16} className="text-sky-500" />
+                1. Data We Collect
+              </h4>
+              <p>
+                DSA Tracker is designed with strict data minimization principles. We only collect the bare minimum information necessary to maintain your spaced repetition schedule:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-slate-500 dark:text-slate-400">
+                <li><strong>Account Credentials:</strong> Display name, unique username, and email address provided during registration.</li>
+                <li><strong>Problem & Revision Progress:</strong> Problem titles, tags, revision intervals, notes, codes, and daily heatmap activity counters.</li>
+                <li><strong>Cryptographic Hashes:</strong> Passwords are one-way hashed with bcrypt. We never store or transmit plaintext passwords.</li>
+              </ul>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Lock size={16} className="text-emerald-500" />
+                2. Strict Email & Zero-Tracking Policy
+              </h4>
+              <p>
+                Your email is used <strong>solely</strong> for account authentication, identity verification, and optional password recovery.
+              </p>
+              <div className="p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 rounded-xl flex items-center gap-2 text-sky-900 dark:text-sky-200 text-xs">
+                <CheckCircle2 size={16} className="text-sky-500 shrink-0" />
+                <span>
+                  We <strong>never</strong> sell, monetize, or disclose personal data to advertising networks or third-party brokers. No spam, ever.
+                </span>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                DSA Tracker stores your problem lists, revision history, and custom notes in your browser’s local storage. In Guest Mode, no data ever leaves your device.
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Cpu size={16} className="text-purple-500" />
+                3. Edge Storage & Security
+              </h4>
+              <p>
+                All account records are hosted on Cloudflare's serverless edge infrastructure (Cloudflare D1 SQLite database). Data is encrypted both in transit (TLS 1.3 / HTTPS) and at rest.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                <Lock size={16} />
-                <span>No Third-Party Trackers</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                We do not include third-party advertising SDKs, tracking pixels, or user behavior profiling. The application runs clean and focused purely on DSA mastery.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                <FileText size={16} />
-                <span>Complete Data Portability</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                You can export your complete problem log anytime in JSON or CSV format directly from the top bar with one click.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-2">
-              <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
-                <ShieldCheck size={16} />
-                <span>Account Control</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Registered users have full control over their credentials and can update their display profile, passwords, or purge their data whenever desired.
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <FileText size={16} className="text-amber-500" />
+                4. Your Rights & Permanent Account Deletion
+              </h4>
+              <p>
+                Under the DPDP Act and GDPR ("Right to be Forgotten"), you retain absolute ownership of your data. You can export your problems as JSON/CSV or permanently wipe your account and all associated records directly from Settings at any time.
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* SECTION 4: LEGAL & TERMS */}
-      {activeSection === 'legal' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-200">
+      {/* SECTION 4: TERMS OF SERVICE */}
+      {activeSection === 'terms' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-200">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
               <Scale size={22} />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">Legal Notices & Terms</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Open-source licensing and fair use disclosures</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Terms of Service</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Guidelines for using DSA Tracker educational productivity software.
+              </p>
             </div>
           </div>
 
-          <div className="space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-              <h4 className="font-bold text-slate-900 dark:text-slate-200 mb-1">Open Source License (MIT)</h4>
-              <p className="text-xs">
-                Copyright (c) 2026 Rahul Kamti. Permission is hereby granted, free of charge, to any person obtaining a copy
-                of this software and associated documentation files to deal in the Software without restriction, including without limitation
-                the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies.
+          <div className="space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100">1. Acceptance of Terms</h4>
+              <p className="text-slate-500 dark:text-slate-400">
+                By accessing or registering an account on DSA Tracker, you acknowledge and agree to comply with these terms. DSA Tracker is an open-source, non-commercial software product created to assist developers and students in algorithmic interview preparation.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-              <h4 className="font-bold text-slate-900 dark:text-slate-200 mb-1">Third-Party Platform Disclaimers</h4>
-              <p className="text-xs">
-                DSA Tracker is an independent open-source productivity companion. Problem titles, platform names, and links to
-                LeetCode, Codeforces, HackerRank, GeeksforGeeks, and NeetCode are trademarks of their respective owners. DSA Tracker
-                is not affiliated with or endorsed by any of these platforms.
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100">2. Fair Use & Prohibited Conduct</h4>
+              <p className="text-slate-500 dark:text-slate-400">
+                Users agree not to disrupt the serverless infrastructure, abuse rate limits, attempt unauthorized access to other accounts, or use automated scripts to spam registration.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-              <h4 className="font-bold text-slate-900 dark:text-slate-200 mb-1">Disclaimer of Warranties</h4>
-              <p className="text-xs">
-                The software is provided "as is", without warranty of any kind, express or implied. In no event shall the authors
-                or copyright holders be liable for any claim, damages, or other liability arising from the use of this software.
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100">3. Third-Party Trademarks</h4>
+              <p className="text-slate-500 dark:text-slate-400">
+                References to platforms like LeetCode, HackerRank, Codeforces, GeeksforGeeks, and NeetCode are trademarks of their respective owners. DSA Tracker is independent and not endorsed by or affiliated with these platforms.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100">4. Disclaimer of Warranty</h4>
+              <p className="text-slate-500 dark:text-slate-400">
+                The software is provided "as is", without warranty of any kind. While high availability is maintained via Cloudflare Workers and D1, users are encouraged to maintain local JSON/CSV backups for critical notes.
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* SECTION 5: ABOUT */}
+      {/* SECTION 5: HELP & FAQ */}
+      {activeSection === 'help' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-200">
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
+              <HelpCircle size={22} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Help & Quick Reference</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Frequently asked questions and Spaced Repetition workflow guide.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4 text-xs sm:text-sm">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <BookOpen size={16} className="text-sky-500" />
+                How does Spaced Repetition (SRS) work in this app?
+              </h4>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                When you solve a problem, DSA Tracker automatically schedules the first review for <strong>tomorrow (+1 day)</strong>. When you review it and mark it solved again, the interval progressively multiplies (1d $\rightarrow$ 3d $\rightarrow$ 7d $\rightarrow$ 14d $\rightarrow$ 30d). If you struggle, reset the interval to keep it fresh in memory.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Layers size={16} className="text-emerald-500" />
+                What happens to my Guest Mode data when I register?
+              </h4>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                When you register or log in, check the <strong>"Sync current guest progress to my account"</strong> checkbox in the Auth dialog. All your solved problems, customized notes, and activity heatmap will automatically transfer to your new cloud account.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Activity size={16} className="text-amber-500" />
+                Can I use DSA Tracker offline?
+              </h4>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Yes! DSA Tracker is built with an offline-first architecture. If your internet connection drops, you can continue reviewing and solving problems. Changes sync as soon as you are reconnected.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 6: ABOUT (Comprehensive & Descriptive) */}
       {activeSection === 'about' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-200">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-200">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
               <Cpu size={22} />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">About DSA Tracker</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Version 1.2.0 · Built for algorithmic engineers</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">About DSA Tracker</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Next-Generation Spaced Repetition System for Coding Interviews & Algorithmic Mastery
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xl font-black text-sky-400 font-mono">SRS</span>
-              <p className="text-xs font-semibold text-slate-300 mt-1">Spaced Repetition</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Automated interval reviews</p>
+          <div className="space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p>
+              <strong>DSA Tracker</strong> was engineered to solve the most prevalent problem software engineers face when preparing for technical interviews: <em>forgetting solved algorithmic concepts after 2–3 weeks</em>.
+            </p>
+            <p>
+              By leveraging the scientific <strong>Hermann Ebbinghaus Forgetting Curve</strong>, DSA Tracker schedules problem reviews at the precise moment cognitive recall begins to fade, locking patterns (Dynamic Programming, Sliding Window, Monotonic Stacks, Union-Find, Graphs) into permanent long-term memory.
+            </p>
+          </div>
+
+          {/* Key Architectural Highlights */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-mono font-bold text-sky-500 dark:text-sky-400 block mb-1">
+                EDGE RUNTIME
+              </span>
+              <p className="text-slate-900 dark:text-slate-200 font-bold text-sm">Cloudflare Workers</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Sub-10ms global edge API response times powered by Hono.
+              </p>
             </div>
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xl font-black text-emerald-400 font-mono">100%</span>
-              <p className="text-xs font-semibold text-slate-300 mt-1">Local & Private</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Full offline capability</p>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-mono font-bold text-emerald-500 dark:text-emerald-400 block mb-1">
+                EDGE DATABASE
+              </span>
+              <p className="text-slate-900 dark:text-slate-200 font-bold text-sm">Cloudflare D1</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Distributed serverless SQLite database with instant query execution.
+              </p>
             </div>
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xl font-black text-purple-400 font-mono">PWA</span>
-              <p className="text-xs font-semibold text-slate-300 mt-1">Mobile Optimized</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Installable on Android & iOS</p>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-mono font-bold text-purple-500 dark:text-purple-400 block mb-1">
+                FRONTEND
+              </span>
+              <p className="text-slate-900 dark:text-slate-200 font-bold text-sm">React 19 + Tailwind</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Optimistic updates, fluid animations, dynamic animated orbital favicon.
+              </p>
             </div>
           </div>
 
-          <div className="pt-2 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
-            <span>Crafted with</span>
-            <Heart size={13} className="text-rose-500 fill-rose-500" />
-            <span>by Rahul Kamti</span>
+          {/* Core Feature Matrix */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Sparkles size={16} className="text-amber-500" />
+              Core Capabilities
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+              <div>• <strong>Intelligent SRS Queue:</strong> Due-today revision queue with overdue detection.</div>
+              <div>• <strong>Activity Heatmap:</strong> GitHub-style continuous practice visualization.</div>
+              <div>• <strong>Curated Collections:</strong> Blind 75, NeetCode 150, Top Interview 150.</div>
+              <div>• <strong>Zero Ads & Pure Privacy:</strong> DPDP & GDPR compliant data architecture.</div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1.5">
+              <span>Architected & Crafted with</span>
+              <Heart size={13} className="text-rose-500 fill-rose-500" />
+              <span>by <strong>Rahul Kamti</strong></span>
+            </div>
+            <a
+              href="https://github.com/rahulkamti11/DSA-Tracker"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sky-500 hover:text-sky-400 font-medium"
+            >
+              <GithubIcon size={14} />
+              <span>github.com/rahulkamti11/DSA-Tracker</span>
+            </a>
           </div>
         </div>
       )}

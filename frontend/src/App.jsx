@@ -108,6 +108,7 @@ export default function App() {
     return validViews.includes(hash) ? hash : 'dashboard';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moreSection, setMoreSection] = useState("feedback");
   const setView = (v) => {
     setViewState(v);
     setSidebarOpen(false);
@@ -573,7 +574,7 @@ export default function App() {
         />
 
         {/* VIEW: MORE (Privacy, Legal, Feedback, Contact) */}
-        <MoreTab active={view === 'more'} user={user}
+        <MoreTab active={view === 'more'} user={user} initialSection={moreSection}
         />
       </Shell>
 
@@ -609,6 +610,10 @@ export default function App() {
         authError={authError}
         syncProgress={syncProgress}
         setSyncProgress={setSyncProgress}
+        onNavigateToLegal={(section) => {
+          setMoreSection(section);
+          setView('more');
+        }}
       />
       <ReminderDialog
         open={remModal.open}
