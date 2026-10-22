@@ -133,8 +133,8 @@ problemsRoutes.post('/', async (c) => {
         if (pl && pl.platform && pl.url) {
           statements.push(
             db.prepare(
-              `INSERT INTO problem_platforms (id, problem_id, platform, url) VALUES (?, ?, ?, ?)`
-            ).bind(crypto.randomUUID(), problemId, pl.platform, pl.url)
+              `INSERT INTO problem_platforms (problem_id, platform, url) VALUES (?, ?, ?)`
+            ).bind(problemId, pl.platform, pl.url)
           );
         }
       }
@@ -252,8 +252,8 @@ problemsRoutes.put('/:id', async (c) => {
         if (pl && pl.platform && pl.url) {
           statements.push(
             db.prepare(
-              `INSERT INTO problem_platforms (id, problem_id, platform, url) VALUES (?, ?, ?, ?)`
-            ).bind(crypto.randomUUID(), problemId, pl.platform, pl.url)
+              `INSERT INTO problem_platforms (problem_id, platform, url) VALUES (?, ?, ?)`
+            ).bind(problemId, pl.platform, pl.url)
           );
         }
       }

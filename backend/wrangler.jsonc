@@ -9,5 +9,12 @@
   "keep_vars": true,
   "vars": {
     "JWT_SECRET": "dsa_tracker_jwt_secret_edge_key_secure_2026"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dsa-tracker-db",
+      "database_id": "dsa-tracker-db"
+    }
+  ]
 }
