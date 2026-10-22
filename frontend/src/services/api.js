@@ -1,5 +1,5 @@
 // Normalize API_URL so it reliably points to the API root without trailing slash
-const rawApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/+$/, '');
+const rawApiUrl = (import.meta.env.VITE_API_URL || '/api').trim().replace(/\/+$/, '');
 const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`;
 
 export const buildAuthHeaders = (token, includeJson = true) => {

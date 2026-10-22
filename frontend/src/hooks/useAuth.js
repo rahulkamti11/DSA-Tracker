@@ -50,7 +50,18 @@ export default function useAuth() {
         localStorage.setItem('dsa_session', JSON.stringify(newUser));
         
         if (syncProgress) {
-          return syncGuestData(data.token)
+          let payload = {};
+          try {
+            payload = {
+              problems: JSON.parse(localStorage.getItem('dsa_local_problems') || '[]'),
+              collections: JSON.parse(localStorage.getItem('dsa_local_collections') || '[]'),
+              trash: JSON.parse(localStorage.getItem('dsa_local_trash') || '[]'),
+              activity: JSON.parse(localStorage.getItem('dsa_local_activity') || '{}'),
+            };
+          } catch {
+            payload = {};
+          }
+          return syncGuestData(data.token, payload)
             .then(() => {
               setUser(newUser);
               setAuthModal(false);

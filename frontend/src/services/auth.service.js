@@ -37,8 +37,9 @@ export const logActivity = (token) =>
     headers: buildAuthHeaders(token),
   });
 
-export const syncGuestData = (token) =>
+export const syncGuestData = (token, payload = {}) =>
   apiRequest('/auth/sync', {
     method: 'POST',
     headers: buildAuthHeaders(token),
+    body: JSON.stringify(payload),
   });
