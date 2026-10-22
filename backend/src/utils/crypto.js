@@ -24,3 +24,5 @@ export const verifyJwt = async (token, secret) => {
     return null;
   }
 };
+
+export const verifyToken = verifyJwt;

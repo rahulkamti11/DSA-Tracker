@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyToken } from '../utils/crypto.js';
+import { verifyJwt } from '../utils/crypto.js';
 
 const reportRoutes = new Hono();
 
@@ -31,7 +31,7 @@ reportRoutes.post('/', async (c) => {
     const authHeader = c.req.header('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const payload = await verifyToken(token, jwtSecret);
+      const payload = await verifyJwt(token, jwtSecret);
       if (payload && payload.id) {
         userId = payload.id;
       }
