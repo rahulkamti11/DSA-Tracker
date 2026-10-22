@@ -54,10 +54,10 @@ export default function useAuth() {
           let payload = {};
           try {
             payload = {
-              problems: JSON.parse(localStorage.getItem('dsa_local_problems') || '[]'),
-              collections: JSON.parse(localStorage.getItem('dsa_local_collections') || '[]'),
-              trash: JSON.parse(localStorage.getItem('dsa_local_trash') || '[]'),
-              activity: JSON.parse(localStorage.getItem('dsa_local_activity') || '{}'),
+              problems: JSON.parse(localStorage.getItem('dsa_local_problems_guest') || localStorage.getItem('dsa_local_problems') || '[]'),
+              collections: JSON.parse(localStorage.getItem('dsa_local_collections_guest') || localStorage.getItem('dsa_local_collections') || '[]'),
+              trash: JSON.parse(localStorage.getItem('dsa_local_trash_guest') || localStorage.getItem('dsa_local_trash') || '[]'),
+              activity: JSON.parse(localStorage.getItem('dsa_local_activity_guest') || localStorage.getItem('dsa_local_activity') || '{}'),
             };
           } catch {
             payload = {};

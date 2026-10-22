@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { today, addDays } from '../utils/date.js';
 import { uid } from '../utils/id.js';
 import { fetchProfile, logActivity } from '../services/auth.service.js';
@@ -23,18 +23,26 @@ import {
   getInitialSeedActivity,
 } from '../utils/seedData.js';
 
-const STORAGE_KEYS = {
+const STORAGE_PREFIX = {
   PROBLEMS: 'dsa_local_problems',
   COLLECTIONS: 'dsa_local_collections',
   TRASH: 'dsa_local_trash',
   ACTIVITY: 'dsa_local_activity',
 };
 
+const getScopeKey = (prefix, user) => {
+  const scope = (user && !user.isGuest && (user.username || user.id)) ? (user.username || user.id) : 'guest';
+  return `${prefix}_${scope}`;
+};
+
 export default function useData(user, onOfflineDetected) {
-  // 1. Initial State from LocalStorage or Default Seeds
+  const currentScope = (user && !user.isGuest && (user.username || user.id)) ? (user.username || user.id) : 'guest';
+  const prevScopeRef = useRef(currentScope);
+
+  // 1. Initial State from LocalStorage for current scope or Default Seeds
   const [problems, setProblems] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PROBLEMS);
+      const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user));
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.warn('Failed to parse cached problems:', e);
@@ -44,7 +52,7 @@ export default function useData(user, onOfflineDetected) {
 
   const [collections, setCollections] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.COLLECTIONS);
+      const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user));
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.warn('Failed to parse cached collections:', e);
@@ -54,7 +62,7 @@ export default function useData(user, onOfflineDetected) {
 
   const [trash, setTrash] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.TRASH);
+      const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.TRASH, user));
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.warn('Failed to parse cached trash:', e);
@@ -64,7 +72,7 @@ export default function useData(user, onOfflineDetected) {
 
   const [activity, setActivity] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
+      const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user));
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.warn('Failed to parse cached activity:', e);
@@ -72,39 +80,63 @@ export default function useData(user, onOfflineDetected) {
     return getInitialSeedActivity();
   });
 
+  // Switch active data immediately when user logs in or out (Prevents Data Leakage to Guest)
+  useEffect(() => {
+    if (prevScopeRef.current !== currentScope) {
+      prevScopeRef.current = currentScope;
+      try {
+        const cachedProblems = localStorage.getItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user));
+        setProblems(cachedProblems ? JSON.parse(cachedProblems) : getInitialSeedProblems());
 
-  // 2. Continuous LocalStorage Persistence
+        const cachedCollections = localStorage.getItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user));
+        setCollections(cachedCollections ? JSON.parse(cachedCollections) : getInitialSeedCollections());
+
+        const cachedTrash = localStorage.getItem(getScopeKey(STORAGE_PREFIX.TRASH, user));
+        setTrash(cachedTrash ? JSON.parse(cachedTrash) : []);
+
+        const cachedActivity = localStorage.getItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user));
+        setActivity(cachedActivity ? JSON.parse(cachedActivity) : getInitialSeedActivity());
+      } catch {
+        setProblems(getInitialSeedProblems());
+        setCollections(getInitialSeedCollections());
+        setTrash([]);
+        setActivity(getInitialSeedActivity());
+      }
+    }
+  }, [currentScope, user]);
+
+  // 2. Continuous LocalStorage Persistence (Scoped per user/guest)
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.PROBLEMS, JSON.stringify(problems));
+      localStorage.setItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user), JSON.stringify(problems));
     } catch (e) {
       console.warn('LocalStorage save error (problems):', e);
     }
-  }, [problems]);
+  }, [problems, user]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.COLLECTIONS, JSON.stringify(collections));
+      localStorage.setItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user), JSON.stringify(collections));
     } catch (e) {
       console.warn('LocalStorage save error (collections):', e);
     }
-  }, [collections]);
+  }, [collections, user]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+      localStorage.setItem(getScopeKey(STORAGE_PREFIX.TRASH, user), JSON.stringify(trash));
     } catch (e) {
       console.warn('LocalStorage save error (trash):', e);
     }
-  }, [trash]);
+  }, [trash, user]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(activity));
+      localStorage.setItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user), JSON.stringify(activity));
     } catch (e) {
       console.warn('LocalStorage save error (activity):', e);
     }
-  }, [activity]);
+  }, [activity, user]);
 
   // 3. Sync/fetch data from backend when logged in user changes
   useEffect(() => {
@@ -212,6 +244,7 @@ export default function useData(user, onOfflineDetected) {
           })
           .catch(err => {
             console.warn('Backend update failed, kept offline change in localStorage:', err.message);
+            if (onOfflineDetected) onOfflineDetected(true);
           });
       }
       return Promise.resolve();
@@ -235,6 +268,7 @@ export default function useData(user, onOfflineDetected) {
           })
           .catch(err => {
             console.warn('Backend create failed, kept offline problem in localStorage:', err.message);
+            if (onOfflineDetected) onOfflineDetected(true);
           });
       }
       return Promise.resolve();
