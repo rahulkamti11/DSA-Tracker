@@ -29,14 +29,24 @@ app.get('/', (c) =>
   })
 );
 
+app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// Mount API feature routes
+// Mount API feature routes (supports both /api/* and root /* for universal compatibility)
 app.route('/api/auth', authRoutes);
+app.route('/auth', authRoutes);
+
 app.route('/api/problems', problemsRoutes);
+app.route('/problems', problemsRoutes);
+
 app.route('/api/collections', collectionsRoutes);
+app.route('/collections', collectionsRoutes);
+
 app.route('/api/feedback', feedbackRoutes);
+app.route('/feedback', feedbackRoutes);
+
 app.route('/api/reports', reportRoutes);
+app.route('/reports', reportRoutes);
 
 // 404 fallback for unmatched API requests
 app.notFound((c) => {
