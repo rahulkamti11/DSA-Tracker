@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   LayoutDashboard,
   ListTodo,
@@ -104,7 +104,7 @@ export default function App() {
   // Layout and View States
   const [view, setViewState] = useState(() => {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['dashboard', 'problems', 'review', 'collections', 'topics', 'notes', 'trash', 'settings'];
+    const validViews = ['dashboard', 'problems', 'review', 'collections', 'topics', 'notes', 'trash', 'settings', 'more'];
     return validViews.includes(hash) ? hash : 'dashboard';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -121,11 +121,23 @@ export default function App() {
     }
   }, [view]);
   const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef(null);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const handleClickOutside = (e) => {
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [exportOpen]);
 
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '');
-      const validViews = ['dashboard', 'problems', 'review', 'collections', 'topics', 'notes', 'trash', 'settings'];
+      const validViews = ['dashboard', 'problems', 'review', 'collections', 'topics', 'notes', 'trash', 'settings', 'more'];
       if (validViews.includes(hash)) setViewState(hash);
     };
     window.addEventListener('hashchange', handleHash);
@@ -336,6 +348,7 @@ export default function App() {
     a.href = url;
     a.download = 'dsa_tracker_export.json';
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   const exportCSV = () => {
@@ -357,6 +370,7 @@ export default function App() {
     a.href = url;
     a.download = 'dsa_tracker_export.csv';
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   const insertFormatting = (before, after = '') => {
@@ -491,7 +505,7 @@ export default function App() {
                 <button onClick={() => setShortcutsModal(true)} className="hidden sm:flex text-slate-400 hover:text-slate-200 p-2 rounded-lg hover:bg-slate-800 transition-colors"><Keyboard size={18}/></button>
               </Tooltip>
               
-              <div className="relative">
+              <div className="relative" ref={exportRef}>
                 <button onClick={() => setExportOpen(!exportOpen)} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/50 dark:hover:bg-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-colors border border-slate-300 dark:border-slate-700/50"><Upload size={14} className="sm:w-4 sm:h-4"/><span className="hidden sm:inline">Export</span><ChevronDown size={13} className={exportOpen ? 'rotate-180 transition-transform' : 'transition-transform'}/></button>
                 {exportOpen && (
                   <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50">

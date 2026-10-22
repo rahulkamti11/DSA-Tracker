@@ -56,7 +56,7 @@ export default function Shell({ sidebar, topbar, bottomNav, sidebarOpen, onClose
       {/* Mobile Drawer Backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-35 md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-[35] md:hidden animate-in fade-in duration-200"
           onClick={onCloseSidebar}
           aria-hidden="true"
         />
