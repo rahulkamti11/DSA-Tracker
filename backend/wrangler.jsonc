@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dsa-tracker-api",
+  "name": "dsa-tracker",
   "main": "src/index.js",
   "compatibility_date": "2026-09-05",
   "compatibility_flags": [
