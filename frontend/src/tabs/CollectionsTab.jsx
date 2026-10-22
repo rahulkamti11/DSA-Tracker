@@ -125,14 +125,14 @@ export default function CollectionsTab({
                           <Tooltip content="Remove from Collection">
                             <button
                               onClick={() => {
-                                if (user && user.token) {
+                                // Optimistic update immediately (offline-first)
+                                setProblems((items) => items.map((item) => item.id === problem.id ? { ...item, collId: '' } : item));
+                                if (user && user.token && !user.isGuest) {
                                   updateProblem(user.token, problem._id || problem.id, { collId: '' })
                                     .then((updated) => {
                                       setProblems((items) => items.map((item) => item.id === problem.id ? mapProblem(updated) : item));
                                     })
-                                    .catch(err => console.error(err));
-                                } else {
-                                  setProblems((items) => items.map((item) => item.id === problem.id ? { ...item, collId: '' } : item));
+                                    .catch(err => console.warn('Failed to sync remove from collection with server:', err.message));
                                 }
                               }}
                               className="p-2 text-slate-500 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 rounded-lg transition-all"

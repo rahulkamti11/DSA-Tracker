@@ -10,7 +10,8 @@ export default function useAuth() {
 
   // Auto guest login on mount if no user session
   useEffect(() => {
-    if (!user) {
+    const saved = localStorage.getItem('dsa_session');
+    if (!saved) {
       guestLogin()
         .then(data => {
           setUser({ username: data.user.username, name: data.user.name, email: data.user.email || '', token: data.token, isGuest: true });
@@ -20,7 +21,7 @@ export default function useAuth() {
           setUser({ username: 'guest', name: 'Guest User', email: '', token: null, isGuest: true });
         });
     }
-  }, [user]);
+  }, []);
 
   // Sync user state to localStorage
   useEffect(() => {
@@ -81,7 +82,13 @@ export default function useAuth() {
 
   const handleLogout = () => {
     localStorage.removeItem('dsa_session');
-    setUser(null);
+    guestLogin()
+      .then(data => {
+        setUser({ username: data.user.username, name: data.user.name, email: data.user.email || '', token: data.token, isGuest: true });
+      })
+      .catch(() => {
+        setUser({ username: 'guest', name: 'Guest User', email: '', token: null, isGuest: true });
+      });
   };
 
   const handleUpdateProfile = async ({ name, username, email, password }) => {

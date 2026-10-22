@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { today, addDays } from '../utils/date.js';
 import { uid } from '../utils/id.js';
 import { fetchProfile, logActivity } from '../services/auth.service.js';
@@ -159,7 +159,10 @@ export default function useData(user, onOfflineDetected) {
     if (!probForm.name) return Promise.reject(new Error('Problem name is required'));
 
     const reminderInDays = Number(probForm.reminderInDays !== undefined ? probForm.reminderInDays : 3);
-    const cleanedTags = probForm.tags.split(',').map(t => t.trim()).filter(Boolean);
+    const rawTags = Array.isArray(probForm.tags)
+      ? probForm.tags
+      : (typeof probForm.tags === 'string' ? probForm.tags.split(',') : []);
+    const cleanedTags = rawTags.map(t => String(t).trim()).filter(Boolean);
     const seen = new Set();
     const uniqueTags = [];
     for (const tag of cleanedTags) {
