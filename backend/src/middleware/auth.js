@@ -1,4 +1,4 @@
-import { verifyJwt } from '../utils/crypto.js';
+import { verifyJwt, getJwtSecret } from '../utils/crypto.js';
 
 export const authMiddleware = async (c, next) => {
   const authHeader = c.req.header('Authorization');
@@ -8,7 +8,7 @@ export const authMiddleware = async (c, next) => {
   }
 
   const token = authHeader.split(' ')[1];
-  const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+  const jwtSecret = getJwtSecret(c.env);
 
   const decoded = await verifyJwt(token, jwtSecret);
   if (!decoded || !decoded.id) {

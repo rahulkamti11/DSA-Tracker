@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { verifyJwt } from '../utils/crypto.js';
+import { verifyJwt, getJwtSecret } from '../utils/crypto.js';
 
 const reportRoutes = new Hono();
 
@@ -24,7 +24,7 @@ async function hashIP(ip) {
 reportRoutes.post('/', async (c) => {
   try {
     const db = c.env.DB;
-    const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+    const jwtSecret = getJwtSecret(c.env);
 
     // Optional user authentication check
     let userId = null;

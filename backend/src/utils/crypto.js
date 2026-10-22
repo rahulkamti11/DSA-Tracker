@@ -25,4 +25,8 @@ export const verifyJwt = async (token, secret) => {
   }
 };
 
+export const getJwtSecret = (env) => {
+  return env?.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+};
+
 export const verifyToken = verifyJwt;

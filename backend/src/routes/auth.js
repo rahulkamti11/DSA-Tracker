@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth.js';
-import { hashPassword, comparePassword, createToken } from '../utils/crypto.js';
+import { hashPassword, comparePassword, createToken, getJwtSecret } from '../utils/crypto.js';
 import { today, fetchUserActivityMap } from '../utils/db.js';
 import {
   ensureGuestSeeded,
@@ -20,7 +20,7 @@ function isValidEmail(email) {
 authRoutes.post('/register', async (c) => {
   try {
     const db = c.env.DB;
-    const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+    const jwtSecret = getJwtSecret(c.env);
     const { username, email, password, name } = await c.req.json();
 
     if (!username || !email || !password || !name) {
@@ -36,8 +36,8 @@ authRoutes.post('/register', async (c) => {
     if (!isValidEmail(cleanEmail) || cleanEmail.length > 50) {
       return c.json({ message: 'Please enter a valid email address (max 50 chars).' }, 400);
     }
-    if (password.length > 10) {
-      return c.json({ message: 'Password cannot exceed 10 characters.' }, 400);
+    if (password.length > 72) {
+      return c.json({ message: 'Password cannot exceed 72 characters.' }, 400);
     }
     if (password.length < 4) {
       return c.json({ message: 'Password must be at least 4 characters long.' }, 400);
@@ -95,14 +95,14 @@ authRoutes.post('/register', async (c) => {
 authRoutes.post('/login', async (c) => {
   try {
     const db = c.env.DB;
-    const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+    const jwtSecret = getJwtSecret(c.env);
     const { username, password } = await c.req.json();
 
     if (!username || !password) {
       return c.json({ message: 'Please enter all fields.' }, 400);
     }
-    if (username.length > 50 || password.length > 10) {
-      return c.json({ message: 'Invalid credentials. Username/email max 50, password max 10 characters.' }, 400);
+    if (username.length > 50 || password.length > 72) {
+      return c.json({ message: 'Invalid credentials. Username/email max 50, password max 72 characters.' }, 400);
     }
 
     const cleanIdentifier = username.toLowerCase().trim();
@@ -143,7 +143,7 @@ authRoutes.post('/login', async (c) => {
 authRoutes.post('/guest-login', async (c) => {
   try {
     const db = c.env.DB;
-    const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+    const jwtSecret = getJwtSecret(c.env);
 
     const guestUser = await ensureGuestSeeded(db);
     const activity = await fetchUserActivityMap(db, guestUser.id);
@@ -171,7 +171,7 @@ authRoutes.get('/me', authMiddleware, async (c) => {
     const userId = c.get('userId');
 
     const user = await db.prepare(
-      `SELECT id, username, name FROM users WHERE id = ?`
+      `SELECT id, username, email, name FROM users WHERE id = ?`
     ).bind(userId).first();
 
     if (!user) {
@@ -197,9 +197,9 @@ authRoutes.get('/me', authMiddleware, async (c) => {
 authRoutes.put('/me', authMiddleware, async (c) => {
   try {
     const db = c.env.DB;
-    const jwtSecret = c.env.JWT_SECRET || 'dsa_tracker_jwt_secret_edge_key_secure_2026';
+    const jwtSecret = getJwtSecret(c.env);
     const userId = c.get('userId');
-    const { name, username, password } = await c.req.json();
+    const { name, username, password, email } = await c.req.json();
 
     const user = await db.prepare(
       `SELECT * FROM users WHERE id = ?`
@@ -241,7 +241,6 @@ authRoutes.put('/me', authMiddleware, async (c) => {
       updatedUsername = cleanUser;
     }
 
-    const { email } = await c.req.json().catch(() => ({}));
     if (email && email.trim() && email.toLowerCase().trim() !== (user.email || '').toLowerCase()) {
       const cleanEmail = email.toLowerCase().trim();
       if (!isValidEmail(cleanEmail) || cleanEmail.length > 50) {
@@ -257,8 +256,8 @@ authRoutes.put('/me', authMiddleware, async (c) => {
     }
 
     if (password && password.trim()) {
-      if (password.trim().length < 4 || password.trim().length > 10) {
-        return c.json({ message: 'Password must be between 4 and 10 characters.' }, 400);
+      if (password.trim().length < 4 || password.trim().length > 72) {
+        return c.json({ message: 'Password must be between 4 and 72 characters.' }, 400);
       }
       updatedPassword = await hashPassword(password.trim());
     }
@@ -312,45 +311,131 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
   try {
     const db = c.env.DB;
     const targetUserId = c.get('userId');
+    const clientPayload = await c.req.json().catch(() => ({}));
 
     const guestUser = await db.prepare(
       `SELECT * FROM users WHERE username = 'guest'`
     ).first();
 
-    if (!guestUser) {
-      return c.json({ message: 'Guest profile not found.' }, 404);
+    // 1. If client provided localStorage offline collections, insert them
+    if (Array.isArray(clientPayload.collections)) {
+      for (const col of clientPayload.collections) {
+        if (col && col.id && col.name && col.id !== 'starred') {
+          await db.prepare(
+            `INSERT OR IGNORE INTO collections (id, user_id, name, description, color) VALUES (?, ?, ?, ?, ?)`
+          ).bind(col.id, targetUserId, col.name.trim(), (col.description || '').trim(), col.color || 'blue').run();
+        }
+      }
     }
 
-    if (guestUser.id === targetUserId) {
-      return c.json({ message: 'Cannot sync guest to guest profile.' }, 400);
+    // 2. If client provided localStorage offline problems, insert them
+    const problemsToSync = [
+      ...(Array.isArray(clientPayload.problems) ? clientPayload.problems : []),
+      ...(Array.isArray(clientPayload.trash) ? clientPayload.trash.map(p => ({ ...p, isDeleted: true })) : [])
+    ];
+
+    for (const prob of problemsToSync) {
+      if (prob && prob.name && prob.name.trim()) {
+        const probId = prob.id || prob._id || crypto.randomUUID();
+        await db.prepare(
+          `INSERT OR IGNORE INTO problems (
+            id, user_id, name, diff, status, coll_id, starred, notes, code, language,
+            date, interval, next_rev, rev_count, no_rep, last_reviewed, solved_date,
+            mastered_date, is_deleted, del_date
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          probId,
+          targetUserId,
+          prob.name.trim(),
+          prob.diff || 'Medium',
+          prob.status || 'Solved',
+          prob.collId || '',
+          prob.starred ? 1 : 0,
+          prob.notes || '',
+          prob.code || '',
+          prob.language || 'cpp',
+          prob.date || today(),
+          prob.interval ?? 1,
+          prob.nextRev || null,
+          prob.revCount ?? 0,
+          prob.noRep ? 1 : 0,
+          prob.lastReviewed || null,
+          prob.solvedDate || null,
+          prob.masteredDate || null,
+          prob.isDeleted ? 1 : 0,
+          prob.delDate || null
+        ).run();
+
+        if (Array.isArray(prob.tags)) {
+          for (const tag of prob.tags) {
+            if (tag && typeof tag === 'string') {
+              await db.prepare(
+                `INSERT OR IGNORE INTO problem_tags (problem_id, tag) VALUES (?, ?)`
+              ).bind(probId, tag.trim()).run();
+            }
+          }
+        }
+
+        if (Array.isArray(prob.platforms)) {
+          for (const pl of prob.platforms) {
+            if (pl && pl.platform && pl.url) {
+              await db.prepare(
+                `INSERT OR IGNORE INTO problem_platforms (problem_id, platform, url) VALUES (?, ?, ?)`
+              ).bind(probId, pl.platform, pl.url).run();
+            }
+          }
+        }
+      }
     }
 
-    // 1. Move custom collections from guest to target user
-    await db.prepare(
-      `UPDATE collections SET user_id = ? 
-       WHERE user_id = ? AND id != 'starred'`
-    ).bind(targetUserId, guestUser.id).run();
+    // 3. If client provided offline activity map, merge it
+    if (clientPayload.activity && typeof clientPayload.activity === 'object') {
+      for (const [dateKey, countVal] of Object.entries(clientPayload.activity)) {
+        if (Number.isInteger(countVal) && countVal > 0) {
+          await db.prepare(
+            `INSERT INTO user_activity (user_id, date, count) 
+             VALUES (?, ?, ?) 
+             ON CONFLICT(user_id, date) DO UPDATE SET count = count + ?`
+          ).bind(targetUserId, dateKey, countVal, countVal).run();
+        }
+      }
+    }
 
-    // 2. Move problems from guest to target user
-    await db.prepare(
-      `UPDATE problems SET user_id = ? WHERE user_id = ?`
-    ).bind(targetUserId, guestUser.id).run();
+    // 4. Move database guest account data if guestUser exists
+    if (guestUser && guestUser.id !== targetUserId) {
+      // Move custom collections from DB guest to target user
+      const guestCollections = await db.prepare(
+        `SELECT * FROM collections WHERE user_id = ? AND id != 'starred'`
+      ).bind(guestUser.id).all();
 
-    // 3. Merge activity from guest to target user
-    const guestActivity = await db.prepare(
-      `SELECT date, count FROM user_activity WHERE user_id = ?`
-    ).bind(guestUser.id).all();
+      for (const col of (guestCollections.results || [])) {
+        await db.prepare(
+          `INSERT OR IGNORE INTO collections (id, user_id, name, description, color) VALUES (?, ?, ?, ?, ?)`
+        ).bind(col.id, targetUserId, col.name, col.description || '', col.color || 'blue').run();
+      }
+      await db.prepare(`DELETE FROM collections WHERE user_id = ? AND id != 'starred'`).bind(guestUser.id).run();
 
-    for (const row of (guestActivity.results || [])) {
+      // Move problems from DB guest to target user
       await db.prepare(
-        `INSERT INTO user_activity (user_id, date, count) 
-         VALUES (?, ?, ?) 
-         ON CONFLICT(user_id, date) DO UPDATE SET count = count + ?`
-      ).bind(targetUserId, row.date, row.count, row.count).run();
-    }
+        `UPDATE problems SET user_id = ? WHERE user_id = ?`
+      ).bind(targetUserId, guestUser.id).run();
 
-    // 4. Reset guest profile in database for next guest sessions
-    await resetGuestProfile(db, guestUser.id);
+      // Merge activity from DB guest to target user
+      const guestActivity = await db.prepare(
+        `SELECT date, count FROM user_activity WHERE user_id = ?`
+      ).bind(guestUser.id).all();
+
+      for (const row of (guestActivity.results || [])) {
+        await db.prepare(
+          `INSERT INTO user_activity (user_id, date, count) 
+           VALUES (?, ?, ?) 
+           ON CONFLICT(user_id, date) DO UPDATE SET count = count + ?`
+        ).bind(targetUserId, row.date, row.count, row.count).run();
+      }
+
+      // Reset guest profile in database for next guest sessions
+      await resetGuestProfile(db, guestUser.id);
+    }
 
     return c.json({ message: 'Guest data successfully migrated to user profile.' });
   } catch (err) {
