@@ -2,10 +2,7 @@ import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth.js';
 import { hashPassword, comparePassword, createToken, getJwtSecret } from '../utils/crypto.js';
 import { today, fetchUserActivityMap } from '../utils/db.js';
-import {
-  ensureGuestSeeded,
-  resetGuestProfile,
-} from '../services/seed.js';
+import { insertDefaultCollections } from '../services/seed.js';
 
 const authRoutes = new Hono();
 
@@ -131,31 +128,6 @@ authRoutes.post('/login', async (c) => {
         username: user.username,
         email: user.email || '',
         name: user.name,
-        activity,
-      },
-    });
-  } catch (err) {
-    return c.json({ error: err.message }, 500);
-  }
-});
-
-// POST /guest-login
-authRoutes.post('/guest-login', async (c) => {
-  try {
-    const db = c.env.DB;
-    const jwtSecret = getJwtSecret(c.env);
-
-    const guestUser = await ensureGuestSeeded(db);
-    const activity = await fetchUserActivityMap(db, guestUser.id);
-    const token = await createToken({ id: guestUser.id }, jwtSecret);
-
-    return c.json({
-      token,
-      user: {
-        id: guestUser.id,
-        _id: guestUser.id,
-        username: guestUser.username,
-        name: guestUser.name,
         activity,
       },
     });
@@ -313,10 +285,6 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
     const targetUserId = c.get('userId');
     const clientPayload = await c.req.json().catch(() => ({}));
 
-    const guestUser = await db.prepare(
-      `SELECT * FROM users WHERE username = 'guest'`
-    ).first();
-
     // 1. If client provided localStorage offline collections, insert them
     if (Array.isArray(clientPayload.collections)) {
       for (const col of clientPayload.collections) {
@@ -401,40 +369,13 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
       }
     }
 
-    // 4. Move database guest account data if guestUser exists
-    if (guestUser && guestUser.id !== targetUserId) {
-      // Move custom collections from DB guest to target user
-      const guestCollections = await db.prepare(
-        `SELECT * FROM collections WHERE user_id = ? AND id != 'starred'`
-      ).bind(guestUser.id).all();
-
-      for (const col of (guestCollections.results || [])) {
-        await db.prepare(
-          `INSERT OR IGNORE INTO collections (id, user_id, name, description, color) VALUES (?, ?, ?, ?, ?)`
-        ).bind(col.id, targetUserId, col.name, col.description || '', col.color || 'blue').run();
-      }
-      await db.prepare(`DELETE FROM collections WHERE user_id = ? AND id != 'starred'`).bind(guestUser.id).run();
-
-      // Move problems from DB guest to target user
-      await db.prepare(
-        `UPDATE problems SET user_id = ? WHERE user_id = ?`
-      ).bind(targetUserId, guestUser.id).run();
-
-      // Merge activity from DB guest to target user
-      const guestActivity = await db.prepare(
-        `SELECT date, count FROM user_activity WHERE user_id = ?`
-      ).bind(guestUser.id).all();
-
-      for (const row of (guestActivity.results || [])) {
-        await db.prepare(
-          `INSERT INTO user_activity (user_id, date, count) 
-           VALUES (?, ?, ?) 
-           ON CONFLICT(user_id, date) DO UPDATE SET count = count + ?`
-        ).bind(targetUserId, row.date, row.count, row.count).run();
-      }
-
-      // Reset guest profile in database for next guest sessions
-      await resetGuestProfile(db, guestUser.id);
+    // 4. Clean up any legacy database guest account if present
+    const legacyGuest = await db.prepare(`SELECT id FROM users WHERE username = 'guest'`).first();
+    if (legacyGuest) {
+      await db.prepare(`DELETE FROM problems WHERE user_id = ?`).bind(legacyGuest.id).run();
+      await db.prepare(`DELETE FROM collections WHERE user_id = ?`).bind(legacyGuest.id).run();
+      await db.prepare(`DELETE FROM user_activity WHERE user_id = ?`).bind(legacyGuest.id).run();
+      await db.prepare(`DELETE FROM users WHERE id = ?`).bind(legacyGuest.id).run();
     }
 
     return c.json({ message: 'Guest data successfully migrated to user profile.' });

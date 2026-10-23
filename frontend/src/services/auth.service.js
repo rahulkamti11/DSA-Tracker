@@ -1,7 +1,5 @@
 import { apiRequest, buildAuthHeaders } from './api';
 
-export const guestLogin = () => apiRequest('/auth/guest-login', { method: 'POST' });
-
 export const authenticate = ({ authMode, username, email, password, name }) =>
   apiRequest(authMode === 'register' ? '/auth/register' : '/auth/login', {
     method: 'POST',

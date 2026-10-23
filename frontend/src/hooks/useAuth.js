@@ -1,31 +1,31 @@
 import { useState, useEffect } from 'react';
-import { guestLogin, authenticate, syncGuestData, updateProfile, deleteAccount } from '../services/auth.service.js';
+import { authenticate, syncGuestData, updateProfile, deleteAccount } from '../services/auth.service.js';
+
+const DEFAULT_GUEST_USER = {
+  username: 'guest',
+  name: 'Guest User',
+  email: '',
+  token: null,
+  isGuest: true,
+};
 
 export default function useAuth() {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('dsa_session') || 'null'));
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dsa_session');
+      return saved ? JSON.parse(saved) : DEFAULT_GUEST_USER;
+    } catch {
+      return DEFAULT_GUEST_USER;
+    }
+  });
   const [authModal, setAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [authError, setAuthError] = useState('');
   const [syncProgress, setSyncProgress] = useState(false);
 
-  // Auto guest login on mount if no user session
-  useEffect(() => {
-    const saved = localStorage.getItem('dsa_session');
-    if (!saved) {
-      guestLogin()
-        .then(data => {
-          setUser({ username: data.user.username, name: data.user.name, email: data.user.email || '', token: data.token, isGuest: true });
-        })
-        .catch(err => {
-          console.warn('Backend offline, initialized offline guest session:', err.message);
-          setUser({ username: 'guest', name: 'Guest User', email: '', token: null, isGuest: true });
-        });
-    }
-  }, []);
-
   // Sync user state to localStorage
   useEffect(() => {
-    if (user) {
+    if (user && !user.isGuest) {
       localStorage.setItem('dsa_session', JSON.stringify(user));
     } else {
       localStorage.removeItem('dsa_session');
@@ -43,10 +43,12 @@ export default function useAuth() {
     authenticate({ authMode, username, email, password, name })
       .then(data => {
         const newUser = {
+          id: data.user.id || data.user._id,
           username: data.user.username,
           name: data.user.name,
           email: data.user.email || '',
           token: data.token,
+          isGuest: false,
         };
         localStorage.setItem('dsa_session', JSON.stringify(newUser));
         
@@ -64,6 +66,11 @@ export default function useAuth() {
           }
           return syncGuestData(data.token, payload)
             .then(() => {
+              // Clear guest storage after successful migration to new account
+              localStorage.removeItem('dsa_local_problems_guest');
+              localStorage.removeItem('dsa_local_collections_guest');
+              localStorage.removeItem('dsa_local_trash_guest');
+              localStorage.removeItem('dsa_local_activity_guest');
               setUser(newUser);
               setAuthModal(false);
               setAuthError('');
@@ -82,13 +89,7 @@ export default function useAuth() {
 
   const handleLogout = () => {
     localStorage.removeItem('dsa_session');
-    guestLogin()
-      .then(data => {
-        setUser({ username: data.user.username, name: data.user.name, email: data.user.email || '', token: data.token, isGuest: true });
-      })
-      .catch(() => {
-        setUser({ username: 'guest', name: 'Guest User', email: '', token: null, isGuest: true });
-      });
+    setUser(DEFAULT_GUEST_USER);
   };
 
   const handleUpdateProfile = async ({ name, username, email, password }) => {
