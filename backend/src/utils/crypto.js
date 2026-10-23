@@ -14,13 +14,14 @@ export const createToken = async (payload, secret) => {
   // 30 days token expiry
   const now = Math.floor(Date.now() / 1000);
   const exp = now + 30 * 24 * 60 * 60;
-  return sign({ ...payload, exp }, secret);
+  return sign({ ...payload, exp }, secret, 'HS256');
 };
 
 export const verifyJwt = async (token, secret) => {
   try {
-    return await verify(token, secret);
-  } catch {
+    return await verify(token, secret, 'HS256');
+  } catch (err) {
+    console.error('JWT verification error:', err);
     return null;
   }
 };
