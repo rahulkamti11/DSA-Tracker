@@ -1,0 +1,5 @@
+# Local development secrets for Cloudflare Wrangler (ignored by git)
+# Copy this file to .dev.vars for local testing:
+# In production, set via: npx wrangler secret put JWT_SECRET
+
+JWT_SECRET=dsa_tracker_jwt_secret_edge_key_secure_2026

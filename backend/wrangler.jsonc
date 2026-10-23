@@ -8,7 +8,7 @@
   ],
   "keep_vars": true,
   "vars": {
-    "JWT_SECRET": "dsa_tracker_jwt_secret_edge_key_secure_2026"
+    "ALLOWED_ORIGIN": "https://mydsatracker.pages.dev"
   },
   "d1_databases": [
     {

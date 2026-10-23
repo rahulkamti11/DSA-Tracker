@@ -8,22 +8,26 @@ import reportRoutes from './routes/reports.js';
 
 const app = new Hono();
 
-// Global CORS Middleware
-app.use(
-  '*',
-  cors({
+// Global CORS Middleware - dynamically respects c.env.ALLOWED_ORIGIN with development & preview support
+app.use('*', async (c, next) => {
+  const envOrigin = c.env?.ALLOWED_ORIGIN;
+  const corsHandler = cors({
     origin: (origin) => {
-      if (!origin || origin.includes('pages.dev') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      if (envOrigin && (origin === envOrigin || envOrigin === '*')) {
         return origin || '*';
       }
-      return 'https://mydsatracker.pages.dev';
+      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.endsWith('.pages.dev')) {
+        return origin || '*';
+      }
+      return envOrigin || '*';
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['Content-Length'],
     maxAge: 86400,
-  })
-);
+  });
+  return corsHandler(c, next);
+});
 
 // Health check endpoints for frontend and status probes
 app.get('/', (c) =>

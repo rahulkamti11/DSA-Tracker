@@ -1,7 +1,6 @@
-// Default backend URL pointing to the deployed Cloudflare Worker
-const DEFAULT_BACKEND_URL = 'https://dsa-tracker.backendserver.workers.dev/api';
-const rawApiUrl = (import.meta.env.VITE_API_URL || DEFAULT_BACKEND_URL).trim().replace(/\/+$/, '');
-const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`;
+// Clean API root from environment variable VITE_API_URL (no hardcoded URLs, no magic string appending)
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const API_URL = rawApiUrl;
 
 export const buildAuthHeaders = (token, includeJson = true) => {
   const headers = {};
@@ -32,7 +31,7 @@ export const apiRequest = async (path, options = {}) => {
 
 export const checkBackendHealth = async () => {
   try {
-    const healthUrl = `${API_URL}/health`;
+    const healthUrl = API_URL ? `${API_URL}/health` : '/health';
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(healthUrl, {
