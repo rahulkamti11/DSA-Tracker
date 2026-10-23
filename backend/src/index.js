@@ -12,7 +12,12 @@ const app = new Hono();
 app.use(
   '*',
   cors({
-    origin: '*',
+    origin: (origin) => {
+      if (!origin || origin.includes('pages.dev') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return origin || '*';
+      }
+      return 'https://mydsatracker.pages.dev';
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['Content-Length'],

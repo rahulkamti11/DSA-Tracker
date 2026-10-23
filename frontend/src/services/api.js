@@ -1,5 +1,6 @@
-// Normalize API_URL so it reliably points to the API root without trailing slash
-const rawApiUrl = (import.meta.env.VITE_API_URL || '/api').trim().replace(/\/+$/, '');
+// Default backend URL pointing to the deployed Cloudflare Worker
+const DEFAULT_BACKEND_URL = 'https://dsa-tracker.backendserver.workers.dev/api';
+const rawApiUrl = (import.meta.env.VITE_API_URL || DEFAULT_BACKEND_URL).trim().replace(/\/+$/, '');
 const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`;
 
 export const buildAuthHeaders = (token, includeJson = true) => {
