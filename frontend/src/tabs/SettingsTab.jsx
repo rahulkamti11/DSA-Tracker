@@ -304,7 +304,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                   maxLength={20}
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="e.g. rahul11"
+                  placeholder="e.g. alex_dev"
                   className={`w-full p-2.5 rounded-xl text-sm transition-all outline-none ${
                     isEditing
                       ? 'bg-slate-50 dark:bg-slate-950 border-2 border-sky-500 text-slate-900 dark:text-slate-100 shadow-xs'
@@ -350,7 +350,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                   maxLength={50}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder={isGuest ? 'No email linked in guest mode' : 'e.g. rahul@example.com'}
+                  placeholder={isGuest ? 'No email linked in guest mode' : 'e.g. alex@example.com'}
                   className={`w-full p-2.5 rounded-xl text-sm transition-all outline-none ${
                     isEditing
                       ? 'bg-slate-50 dark:bg-slate-950 border-2 border-sky-500 text-slate-900 dark:text-slate-100 shadow-xs'

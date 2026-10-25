@@ -169,7 +169,7 @@ export default function AuthDialog({
                 maxLength={20}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Rahul Kamti"
+                placeholder="e.g. Alex Chen"
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-xl text-slate-900 dark:text-slate-100 focus:border-sky-500 outline-none text-sm transition-all"
               />
             </div>
@@ -192,7 +192,7 @@ export default function AuthDialog({
               maxLength={authMode === 'register' ? 20 : 50}
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              placeholder={authMode === 'register' ? 'e.g. rahul11' : 'Username or registered email'}
+              placeholder={authMode === 'register' ? 'e.g. alex_dev' : 'Username or registered email'}
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-xl text-slate-900 dark:text-slate-100 focus:border-sky-500 outline-none text-sm transition-all"
             />
           </div>
@@ -215,7 +215,7 @@ export default function AuthDialog({
                 maxLength={50}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="e.g. rahul@example.com"
+                placeholder="name@example.com"
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-xl text-slate-900 dark:text-slate-100 focus:border-sky-500 outline-none text-sm transition-all"
               />
             </div>
