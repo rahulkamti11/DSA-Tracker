@@ -218,7 +218,7 @@ export default function useData(user, onOfflineDetected) {
       ...probForm,
       status: computedStatus,
       tags: finalTags,
-      platforms: probForm.platforms.filter(pl => pl.platform && pl.url.trim() !== ''),
+      platforms: (Array.isArray(probForm.platforms) ? probForm.platforms : []).filter(pl => pl && pl.platform && pl.url && pl.url.trim() !== ''),
       noRep: reminderInDays === -1 || isMastered,
       interval: (reminderInDays !== -1 && reminderInDays !== -2) ? reminderInDays : 3,
       date: probForm.date || today(),
