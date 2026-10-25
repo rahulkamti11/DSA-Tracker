@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Canvas: Deep British Racing Charcoal -->
+  <rect width="512" height="512" rx="116" fill="#080E14"/>
+  <rect x="8" y="8" width="496" height="496" rx="110" stroke="#132029" stroke-width="2"/>
+
+  <!-- ================= CONTINUOUS & THICKER ORBITAL CADENCE (Tightened Span) ================= -->
+  <!-- Orbit 1: Inner Orbit (Continuous, Thicker 5px, -25deg tilt) -->
+  <ellipse cx="256" cy="256" rx="88" ry="62" stroke="#0284C7" stroke-width="5" transform="rotate(-25 256 256)" opacity="0.45"/>
+  
+  <!-- Orbit 2: Mid Orbit (Continuous, Thicker 5px, 35deg tilt) -->
+  <ellipse cx="256" cy="256" rx="132" ry="96" stroke="#6366F1" stroke-width="5" transform="rotate(35 256 256)" opacity="0.40"/>
+
+  <!-- Orbit 3: Outer Orbit (Continuous, Thicker 5px, -5deg tilt) -->
+  <ellipse cx="256" cy="256" rx="172" ry="124" stroke="#10B981" stroke-width="5" transform="rotate(-5 256 256)" opacity="0.38"/>
+
+  <!-- Motion Orbit Nodes (Showing directional travel on orbits) -->
+  <!-- Orbit 1 Node & Motion Tail: Cyan -->
+  <circle cx="294" cy="190" r="8" fill="#38BDF8" stroke="#080E14" stroke-width="3"/>
+  <circle cx="315" cy="208" r="4.5" fill="#38BDF8" opacity="0.55"/>
+
+  <!-- Orbit 2 Node & Motion Tail: Indigo -->
+  <circle cx="219" cy="147" r="8.5" fill="#818CF8" stroke="#080E14" stroke-width="3"/>
+  <circle cx="198" cy="158" r="4.5" fill="#818CF8" opacity="0.50"/>
+
+  <!-- Orbit 3 Node & Motion Tail: Emerald -->
+  <circle cx="399" cy="181" r="9" fill="#34D399" stroke="#080E14" stroke-width="3"/>
+  <circle cx="418" cy="206" r="5" fill="#34D399" opacity="0.50"/>
+
+  <!-- ================= FOREGROUND LOGO: <DSA/> ================= -->
+  <!-- Left Bracket <: Solid Deep Saffron Orange -->
+  <path d="M 116 208 L 68 256 L 116 304" stroke="#D97706" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Central Typography DSA: Solid Pure Chalk White -->
+  <!-- D: Precision architectural spine + arch -->
+  <path d="M 148 202 L 148 310 M 148 202 L 176 202 C 206 202 206 310 176 310 L 148 310" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- S: Swiss triple curve balance -->
+  <path d="M 255 220 C 242 202 218 202 218 222 C 218 250 260 258 260 288 C 260 312 230 312 218 296" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- A: Geometric triangle apex + clean crossbar -->
+  <path d="M 282 310 L 305 202 L 328 310 M 290 276 L 320 276" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Slash /: Solid British Racing Emerald -->
+  <line x1="370" y1="194" x2="346" y2="318" stroke="#10B981" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- Right Bracket >: Solid Deep Saffron Orange (Matching Left Bracket) -->
+  <path d="M 402 208 L 450 256 L 402 304" stroke="#D97706" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
