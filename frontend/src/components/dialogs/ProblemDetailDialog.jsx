@@ -104,17 +104,6 @@ export default function ProblemDetailDialog({
             </div>
           )}
 
-          {detailModal.notes && detailModal.notes.trim() !== '' && (
-            <div>
-              <h3 className="text-[10px] sm:text-xs font-mono tracking-widest text-slate-500 uppercase mb-2 sm:mb-3">Approach & Notes</h3>
-              <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl">
-                <div
-                  className="prose dark:prose-invert prose-sm max-w-none text-slate-800 dark:text-slate-300 font-mono text-xs sm:text-sm leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: parseMd(detailModal.notes) }}
-                />
-              </div>
-            </div>
-          )}
 
           {detailModal.code && detailModal.code.trim() !== '' && (
             <div>
