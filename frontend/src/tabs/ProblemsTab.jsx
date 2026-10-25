@@ -85,7 +85,18 @@ export default function ProblemsTab({
         {/* Search Row */}
         <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-end w-full">
           <div className="w-full lg:flex-1 min-w-0">
-            <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Search</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase block">Search</label>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="lg:hidden text-[10px] font-mono text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold cursor-pointer"
+                >
+                  Reset ({activeFilterCount}) <X size={12} />
+                </button>
+              )}
+            </div>
             <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 focus-within:border-sky-500 transition-colors h-[38px]">
               <Search size={16} className="text-slate-400 shrink-0" />
               <input
@@ -107,96 +118,8 @@ export default function ProblemsTab({
             </div>
           </div>
 
-          {/* Mobile Filter Controls Bar (Visible on mobile/tablet < lg) */}
-          <div className="flex lg:hidden items-center gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-              className={`flex-1 flex items-center justify-center gap-2 h-[38px] px-3 rounded-lg text-xs font-bold border transition-colors ${
-                mobileFiltersOpen || activeFilterCount > 0
-                  ? 'bg-sky-500/10 text-sky-500 dark:text-sky-400 border-sky-500/30'
-                  : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <Filter size={14} />
-              <span>Filters</span>
-              {activeFilterCount > 0 && (
-                <span className="bg-sky-500 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black">
-                  {activeFilterCount}
-                </span>
-              )}
-              <ChevronDown size={14} className={`transition-transform ${mobileFiltersOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Quick Star Toggle Button on Mobile */}
-            <button
-              type="button"
-              onClick={() => {
-                setStarFilter((prev) => {
-                  if (prev === 'all') return 'starred';
-                  if (prev === 'starred') return 'unstarred';
-                  return 'all';
-                });
-              }}
-              className={`h-[38px] px-3 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors ${
-                starFilter === 'starred'
-                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-500 dark:text-amber-400'
-                  : starFilter === 'unstarred'
-                    ? 'bg-rose-500/10 border-rose-500/40 text-rose-500 dark:text-rose-400'
-                    : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-              }`}
-              title="Filter by Star"
-            >
-              {starFilter === 'all' && <Star size={15} className="text-slate-400" />}
-              {starFilter === 'starred' && <Star size={15} className="text-amber-400 fill-amber-400" />}
-              {starFilter === 'unstarred' && <StarOff size={15} className="text-rose-400" />}
-              <span className="capitalize">{starFilter === 'all' ? 'All' : starFilter}</span>
-            </button>
-
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="h-[38px] px-3 bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20 rounded-lg text-xs font-bold flex items-center gap-1"
-                title="Reset all filters"
-              >
-                <X size={14} />
-                <span>Reset</span>
-              </button>
-            )}
-          </div>
-
-          {/* Desktop Filter Columns & Mobile Expanded Drawer */}
-          <div className={`${mobileFiltersOpen ? 'flex flex-col sm:grid sm:grid-cols-2' : 'hidden'} lg:flex lg:flex-row gap-3 items-stretch lg:items-end w-full lg:w-auto`}>
-            {/* Mobile-Only Difficulty Select */}
-            <div className="w-full lg:hidden">
-              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Difficulty</label>
-              <select
-                value={filters.diff}
-                onChange={(e) => setFilters({ ...filters, diff: e.target.value })}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 h-[38px] outline-none"
-              >
-                <option value="">All Difficulties</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-            </div>
-
-            {/* Mobile-Only Status Select */}
-            <div className="w-full lg:hidden">
-              <label className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mb-1.5 block">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 h-[38px] outline-none"
-              >
-                <option value="">All Statuses</option>
-                <option value="Solved">Solved</option>
-                <option value="Attempted">Attempted</option>
-                <option value="Mastered">Mastered</option>
-              </select>
-            </div>
+          {/* 3 Filter Fields (Collection, Platforms, Tags) - Clean on both mobile & desktop */}
+          <div className="grid grid-cols-3 lg:flex lg:flex-row gap-2 lg:gap-3 items-stretch lg:items-end w-full lg:w-auto">
 
             {/* Collection Select */}
             <CustomFilterSelect
@@ -220,7 +143,7 @@ export default function ProblemsTab({
                 <ChevronDown size={14} className={`transition-transform ${platformDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {platformDropdownOpen && (
-                <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                <div className="absolute left-0 mt-1 w-48 sm:w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
                   {['LeetCode', 'GFG', 'HackerRank', 'Codeforces', 'CodeChef', 'InterviewBit', 'Other'].map((platform) => {
                     const isSelected = filters.platforms.includes(platform);
                     return (
@@ -258,7 +181,7 @@ export default function ProblemsTab({
                 <ChevronDown size={14} className={`transition-transform ${tagDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {tagDropdownOpen && (
-                <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                <div className="absolute right-0 sm:left-0 mt-1 w-48 sm:w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 p-2.5 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
                   {allUniqueTags.length === 0 ? (
                     <div className="text-xs text-slate-500 italic p-1">No tags available</div>
                   ) : (
