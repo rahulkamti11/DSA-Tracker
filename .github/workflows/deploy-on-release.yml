@@ -1,0 +1,61 @@
+name: Deploy on Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI for testing
+
+jobs:
+  test-and-deploy:
+    name: Test & Deploy (Full Stack)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # --- Step 1: Run Backend Tests ---
+      - name: Install Backend Dependencies & Run Tests
+        run: |
+          cd backend
+          npm ci
+          npm test
+
+      # --- Step 2: Run Frontend Tests ---
+      - name: Install Frontend Dependencies & Run Tests
+        run: |
+          cd frontend
+          npm ci
+          npm test
+
+      # --- Step 3: Deploy Backend Cloudflare Worker ---
+      - name: Deploy Backend Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'backend'
+          command: deploy --keep-vars
+
+      # --- Step 4: Build & Deploy Frontend to Cloudflare Pages ---
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Deploy Frontend to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'frontend'
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'mydsatracker' }}
