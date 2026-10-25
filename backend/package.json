@@ -7,13 +7,16 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --keep-vars",
     "db:migrate:local": "wrangler d1 migrations apply dsa-tracker-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply dsa-tracker-db --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply dsa-tracker-db --remote",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "hono": "^4.6.14"
   },
   "devDependencies": {
+    "vitest": "^5.0.5",
     "wrangler": "^3.109.2"
   }
 }
