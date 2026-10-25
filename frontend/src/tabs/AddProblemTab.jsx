@@ -1,0 +1,519 @@
+import { Eye, Pencil, Star, X, Check, ArrowLeft, Plus } from 'lucide-react';
+import { CompactLanguageSelect, CustomFormPlatformSelect, CustomSelect } from '../components/ui/Selects.jsx';
+import { triggerHaptic } from '../utils/haptics.js';
+
+export default function AddProblemTab({
+  active,
+  probModalId,
+  onCancel,
+  saveProblem,
+  probForm,
+  setProbForm,
+  addFormTab,
+  setAddFormTab,
+  notesTab,
+  setNotesTab,
+  collections,
+  formatDate,
+  addDays,
+  today,
+  insertFormatting,
+  parseMd,
+}) {
+  if (!active) return null;
+
+  return (
+    <div className="animate-in fade-in space-y-4 max-w-4xl mx-auto pb-16">
+      {/* Top Header Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic(10);
+                onCancel();
+              }}
+              className="p-1.5 -ml-1 text-slate-400 hover:text-slate-100 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Back to Problems"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+              {probModalId ? 'Edit Problem' : 'Add New Problem'}
+            </h2>
+          </div>
+
+          {/* Quick Save button on mobile header */}
+          <div className="flex sm:hidden items-center gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 bg-slate-800/80 rounded-lg border border-slate-700/60 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="add-problem-tab-form"
+              className="px-4 py-1.5 text-xs font-bold text-slate-950 bg-sky-500 hover:bg-sky-400 rounded-lg shadow-sm shadow-sky-500/30 active:scale-95 transition-all"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+
+        {/* Responsive Segmented Tabs (Details, Notes, Code) */}
+        <div className="flex items-center justify-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-full p-1 gap-1">
+          {[
+            { id: 'details', label: 'Details' },
+            { id: 'notes', label: 'Notes' },
+            { id: 'code', label: 'Code' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                triggerHaptic(8);
+                setAddFormTab(tab.id);
+              }}
+              className={`flex-1 sm:flex-none px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                addFormTab === tab.id
+                  ? 'bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.4)]'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop Save/Cancel Action Buttons */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="add-problem-tab-form"
+            className="px-5 py-2 text-xs font-black text-slate-950 bg-sky-500 hover:bg-sky-400 rounded-xl transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] active:scale-95 cursor-pointer"
+          >
+            Save Problem
+          </button>
+        </div>
+      </div>
+
+      {/* Main Form Body */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <form id="add-problem-tab-form" onSubmit={saveProblem} className="space-y-5">
+          {/* TAB 1: DETAILS */}
+          {addFormTab === 'details' && (
+            <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
+              {/* Problem Name & Star Bookmark */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4 items-end">
+                <div className="sm:col-span-3">
+                  <label className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase mb-1.5 block">
+                    Problem Name *
+                  </label>
+                  <input
+                    value={probForm.name}
+                    onChange={(e) => setProbForm({ ...probForm, name: e.target.value })}
+                    required
+                    placeholder="e.g. Valid Anagram"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500 transition-colors text-sm"
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <label className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase mb-1.5 block">
+                    Bookmark
+                  </label>
+                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-4 rounded-xl h-[46px]">
+                    <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                      <Star
+                        size={16}
+                        className={
+                          probForm.starred
+                            ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_5px_rgba(251,146,60,0.5)]'
+                            : 'text-slate-400 dark:text-slate-600'
+                        }
+                      />
+                      <span className="sm:hidden font-mono text-[11px]">Starred</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic(12);
+                        setProbForm({ ...probForm, starred: !probForm.starred });
+                      }}
+                      className={`w-10 h-5 rounded-full relative transition-colors duration-200 shrink-0 cursor-pointer ${
+                        probForm.starred ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-800'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                          probForm.starred ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2-Column Fields Grid on Mobile (Difficulty & Status, Collection & Date) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <CustomSelect
+                  value={probForm.diff}
+                  onChange={(value) => setProbForm({ ...probForm, diff: value })}
+                  options={[
+                    { value: 'Easy', label: 'Easy' },
+                    { value: 'Medium', label: 'Medium' },
+                    { value: 'Hard', label: 'Hard' },
+                  ]}
+                  label="Difficulty"
+                />
+                <CustomSelect
+                  value={probForm.status}
+                  onChange={(status) =>
+                    setProbForm((prev) => ({
+                      ...prev,
+                      status,
+                      reminderInDays:
+                        status === 'Mastered' ? -2 : prev.reminderInDays === -2 ? 3 : prev.reminderInDays,
+                    }))
+                  }
+                  options={[
+                    { value: 'Solved', label: 'Solved' },
+                    { value: 'Attempted', label: 'Attempted' },
+                    { value: 'Mastered', label: 'Mastered' },
+                  ]}
+                  label="Status"
+                />
+                <CustomSelect
+                  value={probForm.collId}
+                  onChange={(value) => setProbForm({ ...probForm, collId: value })}
+                  options={[
+                    { value: '', label: 'None' },
+                    ...collections.map((collection) => ({ value: collection.id, label: collection.name })),
+                  ]}
+                  label="Collection"
+                />
+                <div>
+                  <label className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase mb-1.5 block">
+                    Date Solved/Added
+                  </label>
+                  <input
+                    type="date"
+                    value={probForm.date}
+                    onChange={(e) => setProbForm({ ...probForm, date: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500 transition-colors h-[46px] font-mono text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Tags & Reminders */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4 items-end">
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase mb-1.5 block">
+                    Tags (Comma separated) *
+                  </label>
+                  <input
+                    value={probForm.tags}
+                    onChange={(e) => setProbForm({ ...probForm, tags: e.target.value })}
+                    required
+                    placeholder="e.g. Arrays, Sorting, Hash Table"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500 transition-colors font-mono text-sm"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase block">
+                      Next Reminder
+                    </label>
+                    {probForm.reminderInDays !== -1 && probForm.reminderInDays !== -2 && (
+                      <span className="text-[9px] font-mono text-sky-500 dark:text-sky-400 font-bold bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
+                        {formatDate(addDays(probForm.date || today(), probForm.reminderInDays))}
+                      </span>
+                    )}
+                  </div>
+                  <CustomSelect
+                    value={probForm.reminderInDays}
+                    onChange={(value) => {
+                      const reminderInDays = Number(value);
+                      setProbForm((prev) => ({
+                        ...prev,
+                        reminderInDays,
+                        status:
+                          reminderInDays === -2
+                            ? 'Mastered'
+                            : prev.status === 'Mastered'
+                            ? 'Solved'
+                            : prev.status,
+                      }));
+                    }}
+                    options={[
+                      { value: 1, label: '1 Day' },
+                      { value: 2, label: '2 Days' },
+                      { value: 3, label: '3 Days (Default)' },
+                      { value: 7, label: '7 Days' },
+                      { value: 14, label: '14 Days' },
+                      { value: 30, label: '30 Days' },
+                      { value: 60, label: '60 Days' },
+                      { value: -1, label: "Don't Repeat" },
+                      { value: -2, label: 'Mastered' },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Platform Links */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-mono tracking-widest text-slate-500 dark:text-slate-400 uppercase block">
+                    Problem/Platform Links
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic(10);
+                      setProbForm({
+                        ...probForm,
+                        platforms: [...probForm.platforms, { platform: 'LeetCode', url: '' }],
+                      });
+                    }}
+                    className="text-[10px] font-bold text-sky-500 dark:text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded border border-sky-500/20 hover:bg-sky-500/20 transition-colors cursor-pointer"
+                  >
+                    + Add Link
+                  </button>
+                </div>
+                <div className="space-y-3 mt-2">
+                  {probForm.platforms.length === 0 ? (
+                    <div className="text-xs text-slate-500 dark:text-slate-600 font-mono italic py-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center">
+                      No platform links added yet. Click "+ Add Link" to register a URL.
+                    </div>
+                  ) : (
+                    probForm.platforms.map((platform, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-4 items-stretch sm:items-center animate-in slide-in-from-left-2"
+                      >
+                        <div className="sm:col-span-1">
+                          <CustomFormPlatformSelect
+                            value={platform.platform}
+                            onChange={(nextPlatform) => {
+                              const updatedPlatforms = [...probForm.platforms];
+                              updatedPlatforms[index].platform = nextPlatform;
+                              setProbForm({ ...probForm, platforms: updatedPlatforms });
+                            }}
+                          />
+                        </div>
+                        <div className="sm:col-span-3 flex gap-2 items-center">
+                          <input
+                            placeholder="https://..."
+                            className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-slate-800 dark:text-slate-200 text-xs outline-none focus:border-sky-500 transition-colors font-mono h-[38px]"
+                            value={platform.url}
+                            onChange={(e) => {
+                              const updatedPlatforms = [...probForm.platforms];
+                              updatedPlatforms[index].url = e.target.value;
+                              setProbForm({ ...probForm, platforms: updatedPlatforms });
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              triggerHaptic(10);
+                              setProbForm({
+                                ...probForm,
+                                platforms: probForm.platforms.filter((_, itemIndex) => itemIndex !== index),
+                              });
+                            }}
+                            className="p-2.5 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors shrink-0 cursor-pointer"
+                            title="Remove Platform Link"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: NOTES */}
+          {addFormTab === 'notes' && (
+            <div className="animate-in fade-in duration-200 space-y-3">
+              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col min-h-[300px]">
+                <div className="p-2.5 sm:p-3 bg-slate-100/90 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                  <div className="text-[10px] font-mono text-slate-600 dark:text-slate-400 tracking-widest mb-2 uppercase font-bold">
+                    Notes / Approach (Markdown Supported)
+                  </div>
+
+                  <div className="flex justify-between items-center gap-2 flex-wrap bg-white dark:bg-slate-950/80 p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-slate-800/80 shadow-sm">
+                    <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-full p-0.5 gap-0.5 overflow-x-auto no-scrollbar max-w-[220px] sm:max-w-none">
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('**', '**')}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-xs font-serif font-bold transition-colors shrink-0"
+                        title="Bold"
+                      >
+                        B
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('*', '*')}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-xs font-serif italic transition-colors shrink-0"
+                        title="Italic"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('`', '`')}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-xs font-mono transition-colors shrink-0"
+                        title="Inline Code"
+                      >
+                        `c`
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('`' + '``\n', '\n`' + '``')}
+                        className="px-2 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-[10px] font-mono transition-colors shrink-0"
+                        title="Code Block"
+                      >
+                        Block
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('- ')}
+                        className="px-2 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-[10px] transition-colors gap-0.5 shrink-0"
+                        title="List item"
+                      >
+                        <span className="text-sm font-bold">•</span> List
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('## ')}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-xs font-bold transition-colors shrink-0"
+                        title="Header 2"
+                      >
+                        H2
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertFormatting('**Time:** O(n) | **Space:** O(1)')}
+                        className="px-2 h-7 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 rounded-full text-[10px] font-bold transition-colors shrink-0"
+                        title="Complexity"
+                      >
+                        T/S
+                      </button>
+                    </div>
+
+                    <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-full p-0.5 gap-0.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setNotesTab('write')}
+                        className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          notesTab === 'write'
+                            ? 'bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.4)]'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <Pencil size={11} /> Write
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNotesTab('preview')}
+                        className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          notesTab === 'preview'
+                            ? 'bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.4)]'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <Eye size={11} /> Preview
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 sm:p-4 flex-1 bg-white dark:bg-slate-950">
+                  {notesTab === 'write' ? (
+                    <textarea
+                      id="tab-notes-editor"
+                      value={probForm.notes}
+                      onChange={(e) => setProbForm({ ...probForm, notes: e.target.value })}
+                      className="w-full h-full min-h-[200px] bg-transparent resize-none outline-none text-[13px] text-slate-800 dark:text-slate-200 font-mono leading-relaxed placeholder-slate-400 dark:placeholder-slate-700"
+                      placeholder="## Approach...&#10;Use **sliding window**..."
+                    />
+                  ) : (
+                    <div
+                      className="prose prose-sm max-w-none text-slate-800 dark:text-slate-300 font-mono text-[13px] leading-relaxed dark:prose-invert"
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          parseMd(probForm.notes) ||
+                          '<span class="text-slate-400 dark:text-slate-600 italic">Nothing to preview.</span>',
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: CODE */}
+          {addFormTab === 'code' && (
+            <div className="animate-in fade-in duration-200 space-y-3">
+              <div className="flex justify-between items-center shrink-0">
+                <div className="border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/30 px-3 rounded-lg text-[10px] font-mono tracking-widest text-slate-600 dark:text-slate-400 uppercase flex items-center h-[32px]">
+                  Code Snippet
+                </div>
+                <CompactLanguageSelect
+                  value={probForm.language || 'cpp'}
+                  onChange={(value) => setProbForm({ ...probForm, language: value })}
+                />
+              </div>
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-950 shadow-sm min-h-[240px]">
+                <textarea
+                  value={probForm.code || ''}
+                  onChange={(e) => setProbForm({ ...probForm, code: e.target.value })}
+                  placeholder="// Paste your solution code here..."
+                  className="w-full h-full min-h-[240px] p-3 sm:p-4 bg-transparent text-slate-800 dark:text-slate-200 font-mono text-xs outline-none resize-none leading-relaxed custom-scrollbar placeholder-slate-400 dark:placeholder-slate-700"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Form Actions Footer */}
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+            <div className="text-xs text-slate-400 font-mono hidden sm:block">
+              {addFormTab === 'details' ? 'Fill out core details & tags' : addFormTab === 'notes' ? 'Markdown formatted approach' : 'Language syntax highlighted'}
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic(10);
+                  onCancel();
+                }}
+                className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-6 py-2.5 text-xs font-black text-slate-950 bg-sky-500 hover:bg-sky-400 rounded-xl transition-all shadow-[0_0_15px_rgba(56,189,248,0.3)] active:scale-95 cursor-pointer"
+              >
+                <Check size={15} />
+                <span>Save Problem</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

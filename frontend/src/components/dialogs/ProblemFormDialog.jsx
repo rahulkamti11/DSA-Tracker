@@ -143,8 +143,8 @@ export default function ProblemFormDialog({
                 </div>
               </div>
 
-              {/* Attributes Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {/* Attributes Grid (2 columns on mobile, 4 on desktop) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <CustomSelect
                   value={probForm.diff}
                   onChange={(value) => setProbForm({ ...probForm, diff: value })}

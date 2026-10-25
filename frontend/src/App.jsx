@@ -32,6 +32,7 @@ import NotesTab from './tabs/NotesTab.jsx';
 import RecycleTab from './tabs/RecycleTab.jsx';
 import SettingsTab from './tabs/SettingsTab.jsx';
 import MoreTab from './tabs/MoreTab.jsx';
+import AddProblemTab from './tabs/AddProblemTab.jsx';
 
 import ShortcutDialog from './components/dialogs/ShortcutDialog.jsx';
 import AuthDialog from './components/dialogs/AuthDialog.jsx';
@@ -216,7 +217,7 @@ export default function App() {
   });
 
   // Modal open handler
-  const openAddModal = (id = null) => {
+  const openAddModal = (id = null, forceTab = false) => {
     if (id) {
       const p = problems.find(x => x.id === id);
       if (p) {
@@ -248,7 +249,13 @@ export default function App() {
     }
     setNotesTab('write');
     setAddFormTab('details');
-    setProbModal({ open: true, id });
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isMobile || forceTab) {
+      setProbModal({ open: false, id });
+      setView('add');
+    } else {
+      setProbModal({ open: true, id });
+    }
   };
 
   useEffect(() => {
@@ -279,6 +286,9 @@ export default function App() {
     saveProblem(probForm, probModal.id)
       .then(() => {
         setProbModal({ open: false, id: null });
+        if (view === 'add') {
+          setView('problems');
+        }
       })
       .catch(err => console.error(err));
   };
@@ -408,13 +418,9 @@ export default function App() {
             }}
             dueCount={dueCount}
             trashCount={trash.length}
-            isAddOpen={probModal.open}
+            isAddOpen={probModal.open || view === 'add'}
             onAddProblem={() => {
-              if (probModal.open) {
-                setProbModal({ open: false, id: null });
-              } else {
-                openAddModal();
-              }
+              openAddModal(null, true);
             }}
           />
         )}
@@ -589,6 +595,26 @@ export default function App() {
 
         {/* VIEW: MORE (Privacy, Legal, Feedback, Contact) */}
         <MoreTab active={view === 'more'} user={user} initialSection={moreSection} openAuthModal={() => setAuthModal(true)} />
+
+        {/* VIEW: ADD PROBLEM (Mobile Tab & View) */}
+        <AddProblemTab
+          active={view === 'add'}
+          probModalId={probModal.id}
+          onCancel={() => setView('problems')}
+          saveProblem={handleSaveProblem}
+          probForm={probForm}
+          setProbForm={setProbForm}
+          addFormTab={addFormTab}
+          setAddFormTab={setAddFormTab}
+          notesTab={notesTab}
+          setNotesTab={setNotesTab}
+          collections={collections}
+          formatDate={formatDate}
+          addDays={addDays}
+          today={today}
+          insertFormatting={insertFormatting}
+          parseMd={parseMd}
+        />
       </Shell>
 
 

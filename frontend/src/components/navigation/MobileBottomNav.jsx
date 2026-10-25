@@ -121,7 +121,7 @@ export default function MobileBottomNav({
           {mainItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.isAdd
-              ? Boolean(isAddOpen)
+              ? (view === 'add' || Boolean(isAddOpen))
               : item.isMore
               ? isMoreActive
               : view === item.id;
