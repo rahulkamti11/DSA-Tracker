@@ -8,6 +8,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
     css: false,
-    isolate: false,
+    isolate: true,
   },
 });

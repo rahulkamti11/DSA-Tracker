@@ -16,7 +16,7 @@ describe('OfflineToast Component', () => {
     const onClose = vi.fn();
     render(<OfflineToast onClose={onClose} />);
 
-    const closeBtn = screen.getByTitle('Dismiss for this session');
+    const closeBtn = screen.getByRole('button', { name: /dismiss for this session/i });
     fireEvent.click(closeBtn);
 
     expect(onClose).toHaveBeenCalledTimes(1);

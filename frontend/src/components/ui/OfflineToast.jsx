@@ -31,6 +31,7 @@ export default function OfflineToast({ onClose }) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Dismiss for this session"
             className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
             title="Dismiss for this session"
           >

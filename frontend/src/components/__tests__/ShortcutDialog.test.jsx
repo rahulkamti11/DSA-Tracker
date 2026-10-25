@@ -22,7 +22,7 @@ describe('ShortcutDialog Component', () => {
     const onClose = vi.fn();
     render(<ShortcutDialog open={true} onClose={onClose} />);
 
-    const closeBtn = screen.getByRole('button');
+    const closeBtn = screen.getByRole('button', { name: /close/i });
     fireEvent.click(closeBtn);
 
     expect(onClose).toHaveBeenCalledTimes(1);
