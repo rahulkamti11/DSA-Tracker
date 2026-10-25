@@ -31,5 +31,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Local Deployment Guide (do not commit)
+# Local Development Files and Tools (do not commit)
 DEPLOYMENT_GUIDE.md
+Untracked/
+
+# Testing
+coverage/
+.vitest/
