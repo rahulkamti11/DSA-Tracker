@@ -1,6 +1,8 @@
 name: Deploy on Release
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI for testing
@@ -48,6 +50,8 @@ jobs:
 
       # --- Step 4: Build & Deploy Frontend to Cloudflare Pages ---
       - name: Build Frontend
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
         run: |
           cd frontend
           npm run build
