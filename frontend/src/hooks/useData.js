@@ -43,7 +43,10 @@ export default function useData(user, onOfflineDetected) {
   const [problems, setProblems] = useState(() => {
     try {
       const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user));
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch (e) {
       console.warn('Failed to parse cached problems:', e);
     }
@@ -53,7 +56,10 @@ export default function useData(user, onOfflineDetected) {
   const [collections, setCollections] = useState(() => {
     try {
       const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user));
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (e) {
       console.warn('Failed to parse cached collections:', e);
     }
@@ -63,7 +69,10 @@ export default function useData(user, onOfflineDetected) {
   const [trash, setTrash] = useState(() => {
     try {
       const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.TRASH, user));
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch (e) {
       console.warn('Failed to parse cached trash:', e);
     }
@@ -73,7 +82,10 @@ export default function useData(user, onOfflineDetected) {
   const [activity, setActivity] = useState(() => {
     try {
       const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user));
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+      }
     } catch (e) {
       console.warn('Failed to parse cached activity:', e);
     }
@@ -86,16 +98,20 @@ export default function useData(user, onOfflineDetected) {
       prevScopeRef.current = currentScope;
       try {
         const cachedProblems = localStorage.getItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user));
-        setProblems(cachedProblems ? JSON.parse(cachedProblems) : getInitialSeedProblems());
+        const parsedProblems = cachedProblems ? JSON.parse(cachedProblems) : null;
+        setProblems(Array.isArray(parsedProblems) ? parsedProblems : getInitialSeedProblems());
 
         const cachedCollections = localStorage.getItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user));
-        setCollections(cachedCollections ? JSON.parse(cachedCollections) : getInitialSeedCollections());
+        const parsedCollections = cachedCollections ? JSON.parse(cachedCollections) : null;
+        setCollections(Array.isArray(parsedCollections) && parsedCollections.length > 0 ? parsedCollections : getInitialSeedCollections());
 
         const cachedTrash = localStorage.getItem(getScopeKey(STORAGE_PREFIX.TRASH, user));
-        setTrash(cachedTrash ? JSON.parse(cachedTrash) : []);
+        const parsedTrash = cachedTrash ? JSON.parse(cachedTrash) : null;
+        setTrash(Array.isArray(parsedTrash) ? parsedTrash : []);
 
         const cachedActivity = localStorage.getItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user));
-        setActivity(cachedActivity ? JSON.parse(cachedActivity) : getInitialSeedActivity());
+        const parsedActivity = cachedActivity ? JSON.parse(cachedActivity) : null;
+        setActivity(parsedActivity && typeof parsedActivity === 'object' && !Array.isArray(parsedActivity) ? parsedActivity : getInitialSeedActivity());
       } catch {
         setProblems(getInitialSeedProblems());
         setCollections(getInitialSeedCollections());
@@ -107,34 +123,42 @@ export default function useData(user, onOfflineDetected) {
 
   // 2. Continuous LocalStorage Persistence (Scoped per user/guest)
   useEffect(() => {
-    try {
-      localStorage.setItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user), JSON.stringify(problems));
-    } catch (e) {
-      console.warn('LocalStorage save error (problems):', e);
+    if (Array.isArray(problems)) {
+      try {
+        localStorage.setItem(getScopeKey(STORAGE_PREFIX.PROBLEMS, user), JSON.stringify(problems));
+      } catch (e) {
+        console.warn('LocalStorage save error (problems):', e);
+      }
     }
   }, [problems, user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user), JSON.stringify(collections));
-    } catch (e) {
-      console.warn('LocalStorage save error (collections):', e);
+    if (Array.isArray(collections) && collections.length > 0) {
+      try {
+        localStorage.setItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user), JSON.stringify(collections));
+      } catch (e) {
+        console.warn('LocalStorage save error (collections):', e);
+      }
     }
   }, [collections, user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(getScopeKey(STORAGE_PREFIX.TRASH, user), JSON.stringify(trash));
-    } catch (e) {
-      console.warn('LocalStorage save error (trash):', e);
+    if (Array.isArray(trash)) {
+      try {
+        localStorage.setItem(getScopeKey(STORAGE_PREFIX.TRASH, user), JSON.stringify(trash));
+      } catch (e) {
+        console.warn('LocalStorage save error (trash):', e);
+      }
     }
   }, [trash, user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user), JSON.stringify(activity));
-    } catch (e) {
-      console.warn('LocalStorage save error (activity):', e);
+    if (activity && typeof activity === 'object' && !Array.isArray(activity)) {
+      try {
+        localStorage.setItem(getScopeKey(STORAGE_PREFIX.ACTIVITY, user), JSON.stringify(activity));
+      } catch (e) {
+        console.warn('LocalStorage save error (activity):', e);
+      }
     }
   }, [activity, user]);
 
@@ -142,21 +166,36 @@ export default function useData(user, onOfflineDetected) {
   useEffect(() => {
     if (user && user.token && !user.isGuest) {
       fetchProblems(user.token)
-        .then(data => setProblems(data.map(mapProblem)))
+        .then(data => {
+          const list = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : null);
+          if (list) {
+            setProblems(list.map(mapProblem));
+          }
+        })
         .catch(err => {
           console.warn('Backend unavailable, using offline local cache (problems):', err.message);
           if (onOfflineDetected) onOfflineDetected(true);
         });
 
       fetchTrash(user.token)
-        .then(data => setTrash(data.map(mapProblem)))
+        .then(data => {
+          const list = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : null);
+          if (list) {
+            setTrash(list.map(mapProblem));
+          }
+        })
         .catch(err => {
           console.warn('Backend unavailable, using offline local cache (trash):', err.message);
           if (onOfflineDetected) onOfflineDetected(true);
         });
 
       fetchCollections(user.token)
-        .then(data => setCollections(data))
+        .then(data => {
+          const list = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : null);
+          if (list && list.length > 0) {
+            setCollections(list);
+          }
+        })
         .catch(err => {
           console.warn('Backend unavailable, using offline local cache (collections):', err.message);
           if (onOfflineDetected) onOfflineDetected(true);
@@ -164,7 +203,7 @@ export default function useData(user, onOfflineDetected) {
 
       fetchProfile(user.token)
         .then(data => {
-          if (data && data.activity) {
+          if (data && data.activity && typeof data.activity === 'object' && !Array.isArray(data.activity)) {
             setActivity(data.activity);
           }
         })

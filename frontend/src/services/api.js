@@ -18,6 +18,14 @@ export const buildAuthHeaders = (token, includeJson = true) => {
 
 export const apiRequest = async (path, options = {}) => {
   const response = await fetch(`${API_URL}${path}`, options);
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    const error = new Error(`Invalid response format from server (expected JSON, got ${contentType || 'unknown'}).`);
+    error.status = response.status;
+    throw error;
+  }
+
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -39,7 +47,8 @@ export const checkBackendHealth = async () => {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    return res.status === 200;
+    const contentType = res.headers.get('content-type') || '';
+    return res.status === 200 && contentType.includes('application/json');
   } catch {
     return false;
   }

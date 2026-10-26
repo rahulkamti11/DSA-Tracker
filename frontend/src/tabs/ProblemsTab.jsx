@@ -38,12 +38,16 @@ export default function ProblemsTab({
   const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Safe array guards
+  const safeCollections = Array.isArray(collections) ? collections : [];
+  const safeProblems = Array.isArray(problems) ? problems : [];
+
   // Computations
   const allUniqueTags = useMemo(() => {
     const set = new Set();
-    problems.forEach(p => p.tags && p.tags.forEach(t => set.add(t)));
+    safeProblems.forEach(p => p && p.tags && Array.isArray(p.tags) && p.tags.forEach(t => set.add(t)));
     return Array.from(set).sort();
-  }, [problems]);
+  }, [safeProblems]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -57,7 +61,7 @@ export default function ProblemsTab({
   }, [filters, starFilter]);
 
   const filteredProblems = useMemo(() => {
-    return problems.filter(p => {
+    return safeProblems.filter(p => {
       const matchesSearch = !filters.search || p.name.toLowerCase().includes(filters.search.toLowerCase());
       const matchesDiff = !filters.diff || p.diff === filters.diff;
       const matchesStatus = !filters.status || p.status === filters.status;
@@ -67,7 +71,7 @@ export default function ProblemsTab({
       const matchesStar = starFilter === 'all' ? true : starFilter === 'starred' ? p.starred : !p.starred;
       return matchesSearch && matchesDiff && matchesStatus && matchesCollection && matchesTags && matchesPlatforms && matchesStar;
     });
-  }, [problems, filters, starFilter]);
+  }, [safeProblems, filters, starFilter]);
 
   const clearAllFilters = () => {
     setFilters({ search: '', diff: '', status: '', tags: [], platforms: [], collId: '' });
@@ -125,7 +129,7 @@ export default function ProblemsTab({
             <CustomFilterSelect
               value={filters.collId}
               onChange={(val) => setFilters({ ...filters, collId: val })}
-              options={[{ value: '', label: 'All Collections' }, ...collections.map((collection) => ({ value: collection.id, label: collection.name }))]}
+              options={[{ value: '', label: 'All Collections' }, ...safeCollections.map((collection) => ({ value: collection.id, label: collection.name }))]}
               placeholder="All Collections"
               label="Collection"
               widthClass="w-full lg:w-36 shrink-0"
@@ -333,9 +337,9 @@ export default function ProblemsTab({
                   </td>
                   <td className="py-3 px-2 max-w-[200px] min-w-[170px] whitespace-normal">
                     <div className="font-bold text-slate-200 text-sm line-clamp-2 break-words leading-tight" title={problem.name}>{problem.name}</div>
-                    {problem.collId && collections.find((collection) => collection.id === problem.collId) && (
+                    {problem.collId && safeCollections.find((collection) => collection.id === problem.collId) && (
                       <div className="hidden md:flex items-center gap-1.5 mt-1.5">
-                        <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded flex items-center gap-1.5 text-[10px] font-bold tracking-widest"><FolderHeart size={10} /> {collections.find((collection) => collection.id === problem.collId).name}</span>
+                        <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded flex items-center gap-1.5 text-[10px] font-bold tracking-widest"><FolderHeart size={10} /> {safeCollections.find((collection) => collection.id === problem.collId).name}</span>
                       </div>
                     )}
                   </td>

@@ -21,6 +21,8 @@ export default function ProblemFormDialog({
 }) {
   if (!open) return null;
 
+  const safeCollections = Array.isArray(collections) ? collections : [];
+
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl h-[92vh] sm:h-[650px] max-h-[92vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.7)] overflow-hidden my-auto">
@@ -174,7 +176,7 @@ export default function ProblemFormDialog({
                   onChange={(value) => setProbForm({ ...probForm, collId: value })}
                   options={[
                     { value: '', label: 'None' },
-                    ...collections.map((collection) => ({ value: collection.id, label: collection.name })),
+                    ...safeCollections.map((collection) => ({ value: collection.id, label: collection.name })),
                   ]}
                   label="Collection"
                 />

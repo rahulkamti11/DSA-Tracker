@@ -22,9 +22,12 @@ export default function CollectionsTab({
 }) {
   if (!active) return null;
 
+  const safeCollections = Array.isArray(collections) ? collections : [];
+  const safeProblems = Array.isArray(problems) ? problems : [];
+
   if (selectedCollection) {
-    const collection = collections.find((item) => item.id === selectedCollection);
-    const list = collection && collection.id === 'starred' ? problems.filter((problem) => problem.starred) : problems.filter((problem) => problem.collId === selectedCollection);
+    const collection = safeCollections.find((item) => item.id === selectedCollection);
+    const list = collection && collection.id === 'starred' ? safeProblems.filter((problem) => problem.starred) : safeProblems.filter((problem) => problem.collId === selectedCollection);
 
     return (
       <div className="space-y-4 animate-in fade-in">
@@ -169,8 +172,8 @@ export default function CollectionsTab({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
-        {collections.length ? collections.map((collection) => {
-          const count = collection.id === 'starred' ? problems.filter((problem) => problem.starred).length : problems.filter((problem) => problem.collId === collection.id).length;
+        {safeCollections.length ? safeCollections.map((collection) => {
+          const count = collection.id === 'starred' ? safeProblems.filter((problem) => problem.starred).length : safeProblems.filter((problem) => problem.collId === collection.id).length;
           const colorMap = { blue: 'from-sky-500 to-blue-500', green: 'from-emerald-500 to-teal-500', yellow: 'from-amber-400 to-yellow-500', red: 'from-rose-500 to-red-500', purple: 'from-violet-500 to-purple-600', orange: 'from-orange-400 to-amber-500' };
           const gradient = colorMap[collection.color] || colorMap.blue;
           return (

@@ -22,6 +22,8 @@ export default function AddProblemTab({
 }) {
   if (!active) return null;
 
+  const safeCollections = Array.isArray(collections) ? collections : [];
+
   return (
     <div className="animate-in fade-in space-y-4 max-w-4xl mx-auto pb-16">
       {/* Top Header Card */}
@@ -197,7 +199,7 @@ export default function AddProblemTab({
                   onChange={(value) => setProbForm({ ...probForm, collId: value })}
                   options={[
                     { value: '', label: 'None' },
-                    ...collections.map((collection) => ({ value: collection.id, label: collection.name })),
+                    ...safeCollections.map((collection) => ({ value: collection.id, label: collection.name })),
                   ]}
                   label="Collection"
                 />
