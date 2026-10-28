@@ -9,5 +9,6 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     css: false,
     isolate: true,
+    fileParallelism: false,
   },
 });
