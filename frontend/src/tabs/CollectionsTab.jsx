@@ -5,6 +5,15 @@ import { getPlatformInfo, getRealUrl } from '../utils/platform.js';
 import { triggerHaptic } from '../utils/haptics.js';
 import { updateProblem, mapProblem } from '../services/problems.service.js';
 
+// Virtual built-in collection dynamically mapped to problem.starred
+const VIRTUAL_STARRED_COLLECTION = {
+  id: 'starred',
+  name: 'Starred',
+  description: 'Priority & bookmarked problems.',
+  color: 'yellow',
+  isVirtual: true,
+};
+
 export default function CollectionsTab({
   active,
   collections,
@@ -22,12 +31,22 @@ export default function CollectionsTab({
 }) {
   if (!active) return null;
 
-  const safeCollections = Array.isArray(collections) ? collections : [];
+  // Filter out any legacy 'starred' rows stored in database/cache
+  const safeCollections = Array.isArray(collections) ? collections.filter((c) => c && c.id !== 'starred') : [];
   const safeProblems = Array.isArray(problems) ? problems : [];
 
+  // Always present the virtual Starred collection alongside custom lists
+  const allCollections = [VIRTUAL_STARRED_COLLECTION, ...safeCollections];
+
   if (selectedCollection) {
-    const collection = safeCollections.find((item) => item.id === selectedCollection);
-    const list = collection && collection.id === 'starred' ? safeProblems.filter((problem) => problem.starred) : safeProblems.filter((problem) => problem.collId === selectedCollection);
+    const isStarred = selectedCollection === 'starred';
+    const collection = isStarred
+      ? VIRTUAL_STARRED_COLLECTION
+      : safeCollections.find((item) => item.id === selectedCollection);
+
+    const list = isStarred
+      ? safeProblems.filter((problem) => problem.starred)
+      : safeProblems.filter((problem) => problem.collId === selectedCollection || (Array.isArray(problem.collections) && problem.collections.includes(selectedCollection)));
 
     return (
       <div className="space-y-4 animate-in fade-in">
@@ -35,9 +54,12 @@ export default function CollectionsTab({
           <div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <span>Collection:</span>
-              <span className="text-purple-600 dark:text-purple-400">{collection ? collection.name : 'Collection'}</span>
+              <span className={isStarred ? 'text-amber-500 dark:text-amber-400 flex items-center gap-1.5' : 'text-purple-600 dark:text-purple-400'}>
+                {isStarred && <Star size={18} className="fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,146,60,0.5)]" />}
+                <span>{collection ? collection.name : 'Collection'}</span>
+              </span>
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">{list.length} problems</p>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">{list.length} {list.length === 1 ? 'problem' : 'problems'}</p>
           </div>
           <button
             onClick={() => setSelectedCollection(null)}
@@ -74,7 +96,7 @@ export default function CollectionsTab({
                 <tr>
                   <td colSpan="6" className="p-4">
                     <div className="p-12 text-center text-slate-500 font-mono border border-dashed border-slate-800 rounded-lg">
-                      No problems in this collection.
+                      {isStarred ? 'No starred problems yet. Bookmark questions to see them here!' : 'No problems in this collection.'}
                     </div>
                   </td>
                 </tr>
@@ -118,9 +140,9 @@ export default function CollectionsTab({
                             <Pencil size={14} />
                           </button>
                         </Tooltip>
-                        {collection && collection.id === 'starred' ? (
+                        {isStarred ? (
                           <Tooltip content="Unstar">
-                            <button onClick={() => toggleStar(problem.id)} className="p-2 text-slate-500 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 rounded-lg transition-all">
+                            <button onClick={() => toggleStar(problem.id)} className="p-2 text-slate-500 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 rounded-lg transition-all cursor-pointer">
                               <Trash size={14} />
                             </button>
                           </Tooltip>
@@ -129,7 +151,14 @@ export default function CollectionsTab({
                             <button
                               onClick={() => {
                                 // Optimistic update immediately (offline-first)
-                                setProblems((items) => items.map((item) => item.id === problem.id ? { ...item, collId: '' } : item));
+                                setProblems((items) => items.map((item) => {
+                                  if (item.id !== problem.id) return item;
+                                  const filteredColls = Array.isArray(item.collections)
+                                    ? item.collections.filter((cid) => cid !== selectedCollection)
+                                    : [];
+                                  const updatedCollId = item.collId === selectedCollection ? '' : item.collId;
+                                  return { ...item, collId: updatedCollId, collections: filteredColls };
+                                }));
                                 if (user && user.token && !user.isGuest) {
                                   updateProblem(user.token, problem._id || problem.id, { collId: '' })
                                     .then((updated) => {
@@ -138,7 +167,7 @@ export default function CollectionsTab({
                                     .catch(err => console.warn('Failed to sync remove from collection with server:', err.message));
                                 }
                               }}
-                              className="p-2 text-slate-500 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 rounded-lg transition-all"
+                              className="p-2 text-slate-500 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 rounded-lg transition-all cursor-pointer"
                             >
                               <Trash size={14} />
                             </button>
@@ -165,31 +194,53 @@ export default function CollectionsTab({
         </div>
         <button
           onClick={() => { setNewCollColor('blue'); setCollModal(true); }}
-          className="bg-sky-500 text-slate-950 px-3.5 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] active:scale-95 transition-all"
+          className="bg-sky-500 text-slate-950 px-3.5 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_20px_rgba(56,189,248,0.5)] active:scale-95 transition-all cursor-pointer"
         >
           + New List
         </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
-        {safeCollections.length ? safeCollections.map((collection) => {
-          const count = collection.id === 'starred' ? safeProblems.filter((problem) => problem.starred).length : safeProblems.filter((problem) => problem.collId === collection.id).length;
-          const colorMap = { blue: 'from-sky-500 to-blue-500', green: 'from-emerald-500 to-teal-500', yellow: 'from-amber-400 to-yellow-500', red: 'from-rose-500 to-red-500', purple: 'from-violet-500 to-purple-600', orange: 'from-orange-400 to-amber-500' };
-          const gradient = colorMap[collection.color] || colorMap.blue;
+        {allCollections.map((collection) => {
+          const isStarred = collection.id === 'starred';
+          const count = isStarred
+            ? safeProblems.filter((problem) => problem.starred).length
+            : safeProblems.filter((problem) => problem.collId === collection.id || (Array.isArray(problem.collections) && problem.collections.includes(collection.id))).length;
+
+          const colorMap = {
+            blue: 'from-sky-500 to-blue-500',
+            green: 'from-emerald-500 to-teal-500',
+            yellow: 'from-amber-400 to-yellow-500',
+            red: 'from-rose-500 to-red-500',
+            purple: 'from-violet-500 to-purple-600',
+            orange: 'from-orange-400 to-amber-500',
+          };
+          const gradient = isStarred ? colorMap.yellow : (colorMap[collection.color] || colorMap.blue);
+
           return (
             <div
               key={collection.id}
               onClick={() => setSelectedCollection(collection.id)}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 rounded-xl flex flex-col justify-between group shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-700 transition-all relative overflow-hidden cursor-pointer active:scale-[0.99]"
             >
-              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-50 group-hover:opacity-100 transition-opacity`} />
+              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${gradient} opacity-60 group-hover:opacity-100 transition-opacity`} />
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">{collection.name}</h3>
-                <p className="text-xs sm:text-sm font-mono text-sky-500 dark:text-sky-400 font-bold">{count} problems</p>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    {isStarred && <Star size={18} className="text-amber-400 fill-amber-400 drop-shadow-[0_0_6px_rgba(251,146,60,0.5)]" />}
+                    <span>{collection.name}</span>
+                  </h3>
+                  {isStarred && (
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
+                      Default
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm font-mono text-sky-500 dark:text-sky-400 font-bold">{count} {count === 1 ? 'problem' : 'problems'}</p>
                 {collection.description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">{collection.description}</p>}
               </div>
               <div className="mt-5 flex justify-end">
-                {collection.id !== 'starred' && (
+                {!isStarred && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -210,11 +261,7 @@ export default function CollectionsTab({
               </div>
             </div>
           );
-        }) : (
-          <p className="text-slate-500 col-span-full border border-dashed border-slate-700 p-12 text-center rounded-xl font-mono text-sm">
-            Create study lists like "Blind 75".
-          </p>
-        )}
+        })}
       </div>
     </div>
   );

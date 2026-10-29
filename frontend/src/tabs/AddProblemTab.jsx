@@ -199,7 +199,7 @@ export default function AddProblemTab({
                   onChange={(value) => setProbForm({ ...probForm, collId: value })}
                   options={[
                     { value: '', label: 'None' },
-                    ...safeCollections.map((collection) => ({ value: collection.id, label: collection.name })),
+                    ...safeCollections.filter((c) => c && c.id !== 'starred').map((collection) => ({ value: collection.id, label: collection.name })),
                   ]}
                   label="Collection"
                 />

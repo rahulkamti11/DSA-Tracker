@@ -58,7 +58,7 @@ export default function useData(user, onOfflineDetected) {
       const saved = localStorage.getItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user));
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter((c) => c && c.id !== 'starred');
       }
     } catch (e) {
       console.warn('Failed to parse cached collections:', e);
@@ -103,7 +103,7 @@ export default function useData(user, onOfflineDetected) {
 
         const cachedCollections = localStorage.getItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user));
         const parsedCollections = cachedCollections ? JSON.parse(cachedCollections) : null;
-        setCollections(Array.isArray(parsedCollections) && parsedCollections.length > 0 ? parsedCollections : getInitialSeedCollections());
+        setCollections(Array.isArray(parsedCollections) ? parsedCollections.filter((c) => c && c.id !== 'starred') : getInitialSeedCollections());
 
         const cachedTrash = localStorage.getItem(getScopeKey(STORAGE_PREFIX.TRASH, user));
         const parsedTrash = cachedTrash ? JSON.parse(cachedTrash) : null;
@@ -192,8 +192,10 @@ export default function useData(user, onOfflineDetected) {
       fetchCollections(user.token)
         .then(data => {
           const list = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : null);
-          if (list && list.length > 0) {
-            setCollections(list);
+          if (Array.isArray(list)) {
+            const sanitized = list.filter((c) => c && c.id !== 'starred');
+            setCollections(sanitized);
+            localStorage.setItem(getScopeKey(STORAGE_PREFIX.COLLECTIONS, user), JSON.stringify(sanitized));
           }
         })
         .catch(err => {
@@ -446,7 +448,12 @@ export default function useData(user, onOfflineDetected) {
   const deleteCollection = (collId) => {
     // Update local state immediately
     setCollections(items => items.filter(item => item.id !== collId));
-    setProblems(items => items.map(item => item.collId === collId ? { ...item, collId: '' } : item));
+    setProblems(items => items.map(item => {
+      const remaining = Array.isArray(item.collections) ? item.collections.filter(c => c !== collId) : [];
+      return (item.collId === collId || (Array.isArray(item.collections) && item.collections.includes(collId)))
+        ? { ...item, collId: remaining[0] || '', collections: remaining }
+        : item;
+    }));
 
     if (user && user.token && !user.isGuest) {
       return deleteCollectionRequest(user.token, collId)

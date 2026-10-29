@@ -32,10 +32,10 @@ describe('useData Hook', () => {
     vi.clearAllMocks();
   });
 
-  it('should initialize with default collections and empty problems list', () => {
+  it('should initialize with empty collections and empty problems list', () => {
     const { result } = renderHook(() => useData(guestUser));
     expect(result.current.problems).toEqual([]);
-    expect(result.current.collections.some((c) => c.id === 'starred')).toBe(true);
+    expect(result.current.collections).toEqual([]);
     expect(result.current.trash).toEqual([]);
   });
 
