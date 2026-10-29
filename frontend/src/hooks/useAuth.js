@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authenticate, syncGuestData, updateProfile, deleteAccount } from '../services/auth.service.js';
+import { authenticate, syncGuestData, updateProfile, deleteAccount, fetchProfile } from '../services/auth.service.js';
 
 const DEFAULT_GUEST_USER = {
   username: 'guest',
@@ -33,6 +33,56 @@ export default function useAuth() {
       localStorage.removeItem('dsa_session');
     }
   }, [user]);
+
+  // Background profile sync: ensures changes made on PC (avatar, gender, name) reflect on mobile seamlessly
+  useEffect(() => {
+    if (user && user.token && !user.isGuest) {
+      try {
+        const req = fetchProfile(user.token);
+        if (req && typeof req.then === 'function') {
+          req
+            .then((profile) => {
+              if (profile) {
+                setUser((prev) => {
+                  if (!prev || prev.isGuest) return prev;
+                  const newAvatar = profile.avatar || 'ninja';
+                  const newGender = profile.gender || 'prefer_not_to_say';
+                  const newName = profile.name || prev.name;
+                  const newUsername = profile.username || prev.username;
+                  const newEmail = profile.email || '';
+
+                  if (
+                    prev.avatar === newAvatar &&
+                    prev.gender === newGender &&
+                    prev.name === newName &&
+                    prev.username === newUsername &&
+                    prev.email === newEmail
+                  ) {
+                    return prev;
+                  }
+
+                  const updated = {
+                    ...prev,
+                    name: newName,
+                    username: newUsername,
+                    email: newEmail,
+                    gender: newGender,
+                    avatar: newAvatar,
+                  };
+                  localStorage.setItem('dsa_session', JSON.stringify(updated));
+                  return updated;
+                });
+              }
+            })
+            .catch((err) => {
+              console.warn('Could not sync user profile with backend on mount:', err.message);
+            });
+        }
+      } catch (err) {
+        console.warn('Error initiating background profile sync:', err.message);
+      }
+    }
+  }, [user?.token, user?.isGuest]);
 
   const handleAuth = (e) => {
     e.preventDefault();
