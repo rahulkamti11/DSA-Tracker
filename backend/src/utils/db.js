@@ -6,33 +6,40 @@ export const addDays = (d, n) => {
   return x.toISOString().split('T')[0];
 };
 
-export const formatProblem = (p, tags = [], platforms = []) => ({
-  id: p.id,
-  _id: p.id,
-  userId: p.user_id,
-  name: p.name,
-  diff: p.diff,
-  status: p.status,
-  collId: p.coll_id || '',
-  starred: Boolean(p.starred),
-  notes: p.notes || '',
-  code: p.code || '',
-  language: p.language || 'cpp',
-  date: p.date,
-  interval: p.interval ?? 1,
-  nextRev: p.next_rev || null,
-  revCount: p.rev_count ?? 0,
-  noRep: Boolean(p.no_rep),
-  lastReviewed: p.last_reviewed || null,
-  solvedDate: p.solved_date || null,
-  masteredDate: p.mastered_date || null,
-  isDeleted: Boolean(p.is_deleted),
-  delDate: p.del_date || null,
-  createdAt: p.created_at,
-  updatedAt: p.updated_at,
-  tags: tags || [],
-  platforms: platforms || [],
-});
+export const formatProblem = (p, tags = [], platforms = [], collections = []) => {
+  const collList = Array.isArray(collections) && collections.length > 0 
+    ? collections 
+    : (p.coll_id ? [p.coll_id] : []);
+
+  return {
+    id: p.id,
+    _id: p.id,
+    userId: p.user_id,
+    name: p.name,
+    diff: p.diff,
+    status: p.status,
+    collId: collList.length > 0 ? collList[0] : (p.coll_id || ''),
+    collections: collList,
+    starred: Boolean(p.starred),
+    notes: p.notes || '',
+    code: p.code || '',
+    language: p.language || 'cpp',
+    date: p.date,
+    interval: p.interval ?? 1,
+    nextRev: p.next_rev || null,
+    revCount: p.rev_count ?? 0,
+    noRep: Boolean(p.no_rep),
+    lastReviewed: p.last_reviewed || null,
+    solvedDate: p.solved_date || null,
+    masteredDate: p.mastered_date || null,
+    isDeleted: Boolean(p.is_deleted),
+    delDate: p.del_date || null,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
+    tags: tags || [],
+    platforms: platforms || [],
+  };
+};
 
 export const fetchHydratedProblems = async (db, userId, isDeleted = 0) => {
   const sortCol = isDeleted === 1 ? 'del_date' : 'created_at';
@@ -59,6 +66,24 @@ export const fetchHydratedProblems = async (db, userId, isDeleted = 0) => {
      WHERE p.user_id = ? AND p.is_deleted = ?`
   ).bind(userId, isDeleted).all();
 
+  // Fetch all associated collections from dedicated problem_collections junction table
+  const collectionsMap = new Map();
+  try {
+    const collsQuery = await db.prepare(
+      `SELECT pc.problem_id, pc.collection_id 
+       FROM problem_collections pc 
+       JOIN problems p ON pc.problem_id = p.id 
+       WHERE p.user_id = ? AND p.is_deleted = ?`
+    ).bind(userId, isDeleted).all();
+
+    for (const row of (collsQuery.results || [])) {
+      if (!collectionsMap.has(row.problem_id)) collectionsMap.set(row.problem_id, []);
+      collectionsMap.get(row.problem_id).push(row.collection_id);
+    }
+  } catch (err) {
+    // Graceful fallback if problem_collections table has not been migrated yet
+  }
+
   const tagMap = new Map();
   for (const row of (tagsQuery.results || [])) {
     if (!tagMap.has(row.problem_id)) tagMap.set(row.problem_id, []);
@@ -75,7 +100,12 @@ export const fetchHydratedProblems = async (db, userId, isDeleted = 0) => {
   }
 
   return problems.map((p) =>
-    formatProblem(p, tagMap.get(p.id) || [], platformMap.get(p.id) || [])
+    formatProblem(
+      p,
+      tagMap.get(p.id) || [],
+      platformMap.get(p.id) || [],
+      collectionsMap.get(p.id) || (p.coll_id ? [p.coll_id] : [])
+    )
   );
 };
 
@@ -94,13 +124,27 @@ export const fetchSingleHydratedProblem = async (db, problemId, userId) => {
     `SELECT platform, url FROM problem_platforms WHERE problem_id = ?`
   ).bind(problemId).all();
 
+  let colls = [];
+  try {
+    const collsQuery = await db.prepare(
+      `SELECT collection_id FROM problem_collections WHERE problem_id = ?`
+    ).bind(problemId).all();
+    colls = (collsQuery.results || []).map((r) => r.collection_id);
+  } catch (err) {
+    // Graceful fallback if problem_collections table does not exist
+  }
+
+  if (colls.length === 0 && p.coll_id) {
+    colls = [p.coll_id];
+  }
+
   const tags = (tagsQuery.results || []).map((r) => r.tag);
   const platforms = (platformsQuery.results || []).map((r) => ({
     platform: r.platform,
     url: r.url,
   }));
 
-  return formatProblem(p, tags, platforms);
+  return formatProblem(p, tags, platforms, colls);
 };
 
 export const fetchUserActivityMap = async (db, userId) => {

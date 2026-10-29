@@ -13,7 +13,7 @@ function isValidEmail(email) {
   return re.test(email.trim().toLowerCase());
 }
 
-// POST /register
+// POST /register - Registration does NOT ask for gender or avatar (low-friction onboarding)
 authRoutes.post('/register', async (c) => {
   try {
     const db = c.env.DB;
@@ -62,15 +62,22 @@ authRoutes.post('/register', async (c) => {
 
     const userId = crypto.randomUUID();
     const hashedPassword = await hashPassword(password);
+    const defaultGender = 'prefer_not_to_say';
+    const defaultAvatar = 'ninja';
 
-    await db.prepare(
-      `INSERT INTO users (id, username, email, password, name) VALUES (?, ?, ?, ?, ?)`
-    ).bind(userId, cleanUsername, cleanEmail, hashedPassword, name.trim()).run();
+    try {
+      await db.prepare(
+        `INSERT INTO users (id, username, email, password, name, gender, avatar) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(userId, cleanUsername, cleanEmail, hashedPassword, name.trim(), defaultGender, defaultAvatar).run();
+    } catch {
+      // Fallback for database before migration
+      await db.prepare(
+        `INSERT INTO users (id, username, email, password, name) VALUES (?, ?, ?, ?, ?)`
+      ).bind(userId, cleanUsername, cleanEmail, hashedPassword, name.trim()).run();
+    }
 
     // Create default collections (only Starred)
-    await db.prepare(
-      `INSERT OR IGNORE INTO collections (id, user_id, name, description, color) VALUES ('starred', ?, 'Starred', 'Favorited problems', 'blue')`
-    ).bind(userId).run();
+    await insertDefaultCollections(db, userId);
 
     const token = await createToken({ id: userId }, jwtSecret);
     return c.json({
@@ -81,6 +88,8 @@ authRoutes.post('/register', async (c) => {
         username: cleanUsername,
         email: cleanEmail,
         name: name.trim(),
+        gender: defaultGender,
+        avatar: defaultAvatar,
       },
     });
   } catch (err) {
@@ -128,6 +137,8 @@ authRoutes.post('/login', async (c) => {
         username: user.username,
         email: user.email || '',
         name: user.name,
+        gender: user.gender || 'prefer_not_to_say',
+        avatar: user.avatar || 'ninja',
         activity,
       },
     });
@@ -142,9 +153,16 @@ authRoutes.get('/me', authMiddleware, async (c) => {
     const db = c.env.DB;
     const userId = c.get('userId');
 
-    const user = await db.prepare(
-      `SELECT id, username, email, name FROM users WHERE id = ?`
-    ).bind(userId).first();
+    let user;
+    try {
+      user = await db.prepare(
+        `SELECT id, username, email, name, gender, avatar FROM users WHERE id = ?`
+      ).bind(userId).first();
+    } catch {
+      user = await db.prepare(
+        `SELECT id, username, email, name FROM users WHERE id = ?`
+      ).bind(userId).first();
+    }
 
     if (!user) {
       return c.json({ message: 'User not found' }, 404);
@@ -158,6 +176,8 @@ authRoutes.get('/me', authMiddleware, async (c) => {
       username: user.username,
       email: user.email || '',
       name: user.name,
+      gender: user.gender || 'prefer_not_to_say',
+      avatar: user.avatar || 'ninja',
       activity,
     });
   } catch (err) {
@@ -171,7 +191,7 @@ authRoutes.put('/me', authMiddleware, async (c) => {
     const db = c.env.DB;
     const jwtSecret = getJwtSecret(c.env);
     const userId = c.get('userId');
-    const { name, username, password, email } = await c.req.json();
+    const { name, username, password, email, gender, avatar } = await c.req.json();
 
     const user = await db.prepare(
       `SELECT * FROM users WHERE id = ?`
@@ -189,6 +209,8 @@ authRoutes.put('/me', authMiddleware, async (c) => {
     let updatedUsername = user.username;
     let updatedEmail = user.email || '';
     let updatedPassword = user.password;
+    let updatedGender = user.gender || 'prefer_not_to_say';
+    let updatedAvatar = user.avatar || 'ninja';
 
     if (name && name.trim()) {
       if (name.trim().length > 20) {
@@ -234,9 +256,27 @@ authRoutes.put('/me', authMiddleware, async (c) => {
       updatedPassword = await hashPassword(password.trim());
     }
 
-    await db.prepare(
-      `UPDATE users SET name = ?, username = ?, email = ?, password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-    ).bind(updatedName, updatedUsername, updatedEmail, updatedPassword, userId).run();
+    if (gender !== undefined) {
+      const validGenders = ['male', 'female', 'other', 'prefer_not_to_say', ''];
+      if (validGenders.includes(gender)) {
+        updatedGender = gender;
+      }
+    }
+
+    if (avatar && typeof avatar === 'string' && avatar.trim().length <= 50) {
+      updatedAvatar = avatar.trim();
+    }
+
+    try {
+      await db.prepare(
+        `UPDATE users SET name = ?, username = ?, email = ?, password = ?, gender = ?, avatar = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+      ).bind(updatedName, updatedUsername, updatedEmail, updatedPassword, updatedGender, updatedAvatar, userId).run();
+    } catch {
+      // Fallback for pre-migration schema
+      await db.prepare(
+        `UPDATE users SET name = ?, username = ?, email = ?, password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+      ).bind(updatedName, updatedUsername, updatedEmail, updatedPassword, userId).run();
+    }
 
     const activity = await fetchUserActivityMap(db, userId);
     const token = await createToken({ id: userId }, jwtSecret);
@@ -249,6 +289,8 @@ authRoutes.put('/me', authMiddleware, async (c) => {
         username: updatedUsername,
         email: updatedEmail,
         name: updatedName,
+        gender: updatedGender,
+        avatar: updatedAvatar,
         activity,
       },
       message: 'Profile updated successfully.',
@@ -305,6 +347,11 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
     for (const prob of problemsToSync) {
       if (prob && prob.name && prob.name.trim()) {
         const probId = prob.id || prob._id || crypto.randomUUID();
+        const collList = Array.isArray(prob.collections) && prob.collections.length > 0
+          ? prob.collections.filter(Boolean)
+          : (prob.collId ? [prob.collId] : []);
+        const primaryColl = collList.length > 0 ? collList[0] : (prob.collId || '');
+
         await db.prepare(
           `INSERT OR IGNORE INTO problems (
             id, user_id, name, diff, status, coll_id, starred, notes, code, language,
@@ -317,7 +364,7 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
           prob.name.trim(),
           prob.diff || 'Medium',
           prob.status || 'Solved',
-          prob.collId || '',
+          primaryColl,
           prob.starred ? 1 : 0,
           prob.notes || '',
           prob.code || '',
@@ -333,6 +380,15 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
           prob.isDeleted ? 1 : 0,
           prob.delDate || null
         ).run();
+
+        // Sync into dedicated problem_collections junction table
+        for (const cid of collList) {
+          if (cid) {
+            await db.prepare(
+              `INSERT OR IGNORE INTO problem_collections (problem_id, collection_id, user_id) VALUES (?, ?, ?)`
+            ).bind(probId, cid, targetUserId).run().catch(() => {});
+          }
+        }
 
         if (Array.isArray(prob.tags)) {
           for (const tag of prob.tags) {
@@ -376,6 +432,7 @@ authRoutes.post('/sync', authMiddleware, async (c) => {
       await db.prepare(`DELETE FROM collections WHERE user_id = ?`).bind(legacyGuest.id).run();
       await db.prepare(`DELETE FROM user_activity WHERE user_id = ?`).bind(legacyGuest.id).run();
       await db.prepare(`DELETE FROM users WHERE id = ?`).bind(legacyGuest.id).run();
+      await db.prepare(`DELETE FROM problem_collections WHERE user_id = ?`).bind(legacyGuest.id).run().catch(() => {});
     }
 
     return c.json({ message: 'Guest data successfully migrated to user profile.' });
@@ -402,12 +459,19 @@ authRoutes.delete('/me', authMiddleware, async (c) => {
       return c.json({ message: 'Guest account cannot be deleted.' }, 403);
     }
 
-    // Cascade deletes handle user_activity, collections, etc.
-    // Explicit cleanup for problems and tags for complete hygiene
-    await db.prepare(`DELETE FROM problems WHERE user_id = ?`).bind(userId).run();
-    await db.prepare(`DELETE FROM collections WHERE user_id = ?`).bind(userId).run();
-    await db.prepare(`DELETE FROM user_activity WHERE user_id = ?`).bind(userId).run();
-    await db.prepare(`DELETE FROM users WHERE id = ?`).bind(userId).run();
+    // Comprehensive cascading deletion across all relational tables
+    await db.batch([
+      db.prepare(`DELETE FROM problem_tags WHERE problem_id IN (SELECT id FROM problems WHERE user_id = ?)`).bind(userId),
+      db.prepare(`DELETE FROM problem_platforms WHERE problem_id IN (SELECT id FROM problems WHERE user_id = ?)`).bind(userId),
+      db.prepare(`DELETE FROM problem_reviews WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM problem_collections WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM problems WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM collections WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM user_activity WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM feedback WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM bug_reports WHERE user_id = ?`).bind(userId),
+      db.prepare(`DELETE FROM users WHERE id = ?`).bind(userId),
+    ]);
 
     return c.json({ message: 'Your account and all associated data have been permanently deleted.' });
   } catch (err) {

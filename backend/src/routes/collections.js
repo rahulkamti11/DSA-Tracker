@@ -14,7 +14,7 @@ collectionsRoutes.get('/', async (c) => {
     const collections = await db.prepare(
       `SELECT id, user_id, name, description, color, created_at 
        FROM collections 
-       WHERE user_id = ? 
+       WHERE user_id = ? AND id != 'starred'
        ORDER BY created_at ASC`
     ).bind(userId).all();
 
@@ -33,6 +33,9 @@ collectionsRoutes.post('/', async (c) => {
 
     if (!id || !name) {
       return c.json({ message: 'Collection ID and name are required.' }, 400);
+    }
+    if (id === 'starred' || name.trim().toLowerCase() === 'starred') {
+      return c.json({ message: 'The "Starred" collection is reserved as a virtual system collection.' }, 400);
     }
 
     await db.prepare(
@@ -84,7 +87,7 @@ collectionsRoutes.put('/:id', async (c) => {
   }
 });
 
-// DELETE /:id - Delete collection and reset problems' collId
+// DELETE /:id - Delete collection and reset problems' associations
 collectionsRoutes.delete('/:id', async (c) => {
   try {
     const db = c.env.DB;
@@ -95,6 +98,12 @@ collectionsRoutes.delete('/:id', async (c) => {
       db.prepare(`DELETE FROM collections WHERE id = ? AND user_id = ?`).bind(id, userId),
       db.prepare(`UPDATE problems SET coll_id = '' WHERE user_id = ? AND coll_id = ?`).bind(userId, id),
     ];
+
+    try {
+      statements.push(
+        db.prepare(`DELETE FROM problem_collections WHERE collection_id = ? AND user_id = ?`).bind(id, userId)
+      );
+    } catch {}
 
     await db.batch(statements);
 

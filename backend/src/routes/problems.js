@@ -64,6 +64,7 @@ problemsRoutes.post('/', async (c) => {
       status = 'Solved',
       tags = [],
       collId = '',
+      collections = [],
       starred = false,
       notes = '',
       platforms = [],
@@ -85,6 +86,11 @@ problemsRoutes.post('/', async (c) => {
 
     const problemId = body.id || crypto.randomUUID();
 
+    const collIds = Array.isArray(collections) && collections.length > 0
+      ? collections.filter(Boolean)
+      : (collId ? [collId] : []);
+    const primaryCollId = collIds.length > 0 ? collIds[0] : (collId || '');
+
     const statements = [
       db.prepare(
         `INSERT INTO problems (
@@ -98,7 +104,7 @@ problemsRoutes.post('/', async (c) => {
         name.trim(),
         diff,
         status,
-        collId || '',
+        primaryCollId,
         starred ? 1 : 0,
         notes || '',
         code || '',
@@ -113,6 +119,19 @@ problemsRoutes.post('/', async (c) => {
         masteredDate || (status === 'Mastered' ? date : null)
       ),
     ];
+
+    // Dedicated problem_collections junction entries
+    if (collIds.length > 0) {
+      for (const cId of collIds) {
+        if (cId && typeof cId === 'string') {
+          statements.push(
+            db.prepare(
+              `INSERT OR IGNORE INTO problem_collections (problem_id, collection_id, user_id) VALUES (?, ?, ?)`
+            ).bind(problemId, cId.trim(), userId)
+          );
+        }
+      }
+    }
 
     // Tags
     if (Array.isArray(tags)) {
@@ -177,12 +196,20 @@ problemsRoutes.put('/:id', async (c) => {
 
     const statements = [];
 
+    const collIds = Array.isArray(body.collections)
+      ? body.collections.filter(Boolean)
+      : (body.collId !== undefined ? (body.collId ? [body.collId] : []) : null);
+
+    const primaryCollId = collIds !== null
+      ? (collIds.length > 0 ? collIds[0] : '')
+      : (body.collId !== undefined ? body.collId : existing.coll_id);
+
     // Fields to update
     const updated = {
       name: body.name !== undefined ? body.name : existing.name,
       diff: body.diff !== undefined ? body.diff : existing.diff,
       status: body.status !== undefined ? body.status : existing.status,
-      coll_id: body.collId !== undefined ? body.collId : existing.coll_id,
+      coll_id: primaryCollId,
       starred: body.starred !== undefined ? (body.starred ? 1 : 0) : existing.starred,
       notes: body.notes !== undefined ? body.notes : existing.notes,
       code: body.code !== undefined ? body.code : existing.code,
@@ -226,6 +253,22 @@ problemsRoutes.put('/:id', async (c) => {
         userId
       )
     );
+
+    // Dedicated problem_collections replacement if provided
+    if (collIds !== null) {
+      statements.push(
+        db.prepare(`DELETE FROM problem_collections WHERE problem_id = ?`).bind(problemId)
+      );
+      for (const cId of collIds) {
+        if (cId && typeof cId === 'string') {
+          statements.push(
+            db.prepare(
+              `INSERT OR IGNORE INTO problem_collections (problem_id, collection_id, user_id) VALUES (?, ?, ?)`
+            ).bind(problemId, cId.trim(), userId)
+          );
+        }
+      }
+    }
 
     // Tags replacement if provided
     if (Array.isArray(body.tags)) {
@@ -341,13 +384,16 @@ problemsRoutes.delete('/:id', async (c) => {
     const userId = c.get('userId');
     const problemId = c.req.param('id');
 
-    const res = await db.prepare(
-      `DELETE FROM problems WHERE id = ? AND user_id = ?`
-    ).bind(problemId, userId).run();
+    const statements = [
+      db.prepare(`DELETE FROM problems WHERE id = ? AND user_id = ?`).bind(problemId, userId),
+    ];
+    try {
+      statements.push(
+        db.prepare(`DELETE FROM problem_collections WHERE problem_id = ?`).bind(problemId)
+      );
+    } catch {}
 
-    if (res.meta && res.meta.changes === 0) {
-      return c.json({ message: 'Problem not found or unauthorized' }, 404);
-    }
+    await db.batch(statements);
 
     return c.json({ message: 'Problem deleted permanently' });
   } catch (err) {

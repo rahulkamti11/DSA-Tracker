@@ -11,7 +11,7 @@ describe('Backend DB Utilities (db.js)', () => {
     expect(addDays('2026-05-31', 1)).toBe('2026-06-01');
   });
 
-  it('formatProblem should hydrate SQLite database problem row into client structure', () => {
+  it('formatProblem should hydrate SQLite database problem row into client structure with collections', () => {
     const rawDbRow = {
       id: 'prob-101',
       user_id: 'user-001',
@@ -39,8 +39,9 @@ describe('Backend DB Utilities (db.js)', () => {
 
     const tags = ['String', 'Hash Table'];
     const platforms = [{ platform: 'LeetCode', url: 'https://leetcode.com/problems/valid-anagram/' }];
+    const collections = ['blind75', 'neetcode150'];
 
-    const formatted = formatProblem(rawDbRow, tags, platforms);
+    const formatted = formatProblem(rawDbRow, tags, platforms, collections);
 
     expect(formatted.id).toBe('prob-101');
     expect(formatted.userId).toBe('user-001');
@@ -48,6 +49,8 @@ describe('Backend DB Utilities (db.js)', () => {
     expect(formatted.starred).toBe(true);
     expect(formatted.noRep).toBe(false);
     expect(formatted.isDeleted).toBe(false);
+    expect(formatted.collId).toBe('blind75');
+    expect(formatted.collections).toEqual(['blind75', 'neetcode150']);
     expect(formatted.tags).toEqual(['String', 'Hash Table']);
     expect(formatted.platforms).toEqual(platforms);
   });
