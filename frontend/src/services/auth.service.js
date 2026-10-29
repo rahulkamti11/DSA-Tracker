@@ -16,11 +16,11 @@ export const fetchProfile = (token) =>
     headers: buildAuthHeaders(token, false),
   });
 
-export const updateProfile = ({ token, name, username, email, password }) =>
+export const updateProfile = ({ token, name, username, email, password, gender, avatar }) =>
   apiRequest('/auth/me', {
     method: 'PUT',
     headers: buildAuthHeaders(token),
-    body: JSON.stringify({ name, username, email, password }),
+    body: JSON.stringify({ name, username, email, password, gender, avatar }),
   });
 
 export const deleteAccount = (token) =>

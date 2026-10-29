@@ -5,6 +5,8 @@ const DEFAULT_GUEST_USER = {
   username: 'guest',
   name: 'Guest User',
   email: '',
+  gender: 'prefer_not_to_say',
+  avatar: 'ninja',
   token: null,
   isGuest: true,
 };
@@ -47,6 +49,8 @@ export default function useAuth() {
           username: data.user.username,
           name: data.user.name,
           email: data.user.email || '',
+          gender: data.user.gender || 'prefer_not_to_say',
+          avatar: data.user.avatar || 'ninja',
           token: data.token,
           isGuest: false,
         };
@@ -92,7 +96,7 @@ export default function useAuth() {
     setUser(DEFAULT_GUEST_USER);
   };
 
-  const handleUpdateProfile = async ({ name, username, email, password }) => {
+  const handleUpdateProfile = async ({ name, username, email, password, gender, avatar }) => {
     if (user?.isGuest || user?.username === 'guest') {
       throw new Error('Guest profile cannot be modified. Please log in or register an account.');
     }
@@ -103,6 +107,8 @@ export default function useAuth() {
       username,
       email: email || undefined,
       password: password || undefined,
+      gender: gender !== undefined ? gender : undefined,
+      avatar: avatar !== undefined ? avatar : undefined,
     });
 
     const updatedUser = {
@@ -110,6 +116,8 @@ export default function useAuth() {
       username: res.user.username,
       name: res.user.name,
       email: res.user.email || '',
+      gender: res.user.gender || user.gender || 'prefer_not_to_say',
+      avatar: res.user.avatar || user.avatar || 'ninja',
       token: res.token || user.token,
     };
     setUser(updatedUser);
@@ -125,7 +133,25 @@ export default function useAuth() {
     if (user?.isGuest || user?.username === 'guest') {
       throw new Error('Guest account cannot be deleted.');
     }
+    const username = user?.username;
+    const userId = user?.id;
+
     await deleteAccount(user?.token);
+
+    // Purge local browser storage caches scoped to this user
+    if (username) {
+      localStorage.removeItem(`dsa_problems_${username}`);
+      localStorage.removeItem(`dsa_collections_${username}`);
+      localStorage.removeItem(`dsa_trash_${username}`);
+      localStorage.removeItem(`dsa_activity_${username}`);
+    }
+    if (userId && userId !== username) {
+      localStorage.removeItem(`dsa_problems_${userId}`);
+      localStorage.removeItem(`dsa_collections_${userId}`);
+      localStorage.removeItem(`dsa_trash_${userId}`);
+      localStorage.removeItem(`dsa_activity_${userId}`);
+    }
+
     handleLogout();
   };
 

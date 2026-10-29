@@ -6,12 +6,13 @@ import {
   Lock,
   Eye,
   EyeOff,
-  User,
   AlertCircle,
   CheckCircle2,
   Shield,
   LogIn,
+  Sparkles,
 } from 'lucide-react';
+import { AVATAR_OPTIONS, AVATAR_CATEGORIES, UserAvatarBadge, getAvatarMeta } from '../utils/avatars.jsx';
 
 export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAccount, openAuthModal }) {
   const { themeMode, setTheme } = useTheme();
@@ -29,9 +30,12 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
     username: user?.username || (isGuest ? 'guest' : ''),
     email: user?.email || '',
     password: '',
+    gender: user?.gender || 'prefer_not_to_say',
+    avatar: user?.avatar || 'ninja',
   });
 
   const [tooltipsEnabled, setTooltipsEnabled] = useState(true);
+  const [avatarFilter, setAvatarFilter] = useState('all');
 
   // Sync formData when user prop changes
   useEffect(() => {
@@ -40,6 +44,8 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
       username: user?.username || (isGuest ? 'guest' : ''),
       email: user?.email || '',
       password: '',
+      gender: user?.gender || 'prefer_not_to_say',
+      avatar: user?.avatar || 'ninja',
     });
     setIsEditing(false);
   }, [user, isGuest]);
@@ -70,6 +76,8 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
       username: user?.username || '',
       email: user?.email || '',
       password: '',
+      gender: user?.gender || 'prefer_not_to_say',
+      avatar: user?.avatar || 'ninja',
     });
     setStatusMessage(null);
   };
@@ -128,6 +136,8 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
           username: formData.username.trim(),
           email: formData.email.trim(),
           password: formData.password.trim() || undefined,
+          gender: formData.gender,
+          avatar: formData.avatar,
         });
 
         setStatusMessage({
@@ -148,9 +158,11 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
     }
   };
 
+  const selectedAvatarMeta = getAvatarMeta(formData.avatar);
+
   return (
     <div className="animate-in fade-in space-y-6 max-w-5xl">
-      {/* Header Banner - Note: Cloud Synced badge removed per user request */}
+      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm">
         <div>
           <div className="flex items-center gap-2.5">
@@ -162,7 +174,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
             )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage your personal profile details, dashboard visual themes, and interaction settings.
+            Manage your personal profile details, developer avatar, dashboard visual themes, and interaction settings.
           </p>
         </div>
 
@@ -181,10 +193,8 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
         {/* Profile Details Card */}
         <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl shadow-sm space-y-5 animate-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-sm">
-                <User size={16} />
-              </div>
+            <div className="flex items-center gap-2.5">
+              <UserAvatarBadge avatarId={formData.avatar} size="md" />
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Profile Details</h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -197,7 +207,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
               </div>
             </div>
 
-            {/* Top controls: If logged in and not editing, show Edit button. Cancel/Save appear ONLY at the bottom. */}
+            {/* Top controls */}
             {!isGuest && !isEditing && (
               <button
                 type="button"
@@ -209,7 +219,6 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
               </button>
             )}
 
-            {/* If guest: indicate read-only */}
             {isGuest && (
               <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60">
                 <Lock size={12} />
@@ -217,7 +226,6 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
               </span>
             )}
 
-            {/* When editing: show subtle active badge, no buttons at top */}
             {!isGuest && isEditing && (
               <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5 bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
@@ -245,13 +253,79 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
           )}
 
           <form onSubmit={handleSave} className="space-y-4">
+            {/* Developer Avatar Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                  Developer Avatar
+                </label>
+                <span className="text-[10px] font-mono text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-1">
+                  <Sparkles size={11} /> {selectedAvatarMeta.name}
+                </span>
+              </div>
+
+              {isEditing ? (
+                <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                  {/* Category Filter Pills */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                    {AVATAR_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setAvatarFilter(cat.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors cursor-pointer border ${
+                          avatarFilter === cat.id
+                            ? 'bg-sky-500/15 border-sky-500/40 text-sky-400'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Avatars Grid */}
+                  <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-2 max-h-56 overflow-y-auto custom-scrollbar p-1">
+                    {AVATAR_OPTIONS.filter((a) => avatarFilter === 'all' || a.category === avatarFilter).map((av) => {
+                      const isSelected = formData.avatar === av.id;
+                      return (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, avatar: av.id })}
+                          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all border text-center cursor-pointer group ${
+                            isSelected
+                              ? 'bg-sky-500/10 border-sky-500 text-sky-400 shadow-sm scale-105 ring-2 ring-sky-500/30'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 hover:scale-102'
+                          }`}
+                          title={`${av.name} (${av.category})`}
+                        >
+                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700/50 bg-slate-900 mb-1 shrink-0">
+                            <img src={av.url} alt={av.name} className="w-full h-full object-cover" loading="lazy" />
+                          </div>
+                          <span className="text-[10px] font-bold line-clamp-1 w-full truncate">{av.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-100/70 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800">
+                  <UserAvatarBadge avatarId={formData.avatar} size="md" />
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{selectedAvatarMeta.name}</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{selectedAvatarMeta.category}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Display Name */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
                   Display Name
                 </label>
-                {/* Character limit shown ONLY while editing */}
                 {isEditing && (
                   <span className="text-[10px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
                     {formData.name.length}/20
@@ -274,17 +348,16 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                 />
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">
-                Your visible username shown on your dashboard greeting and cards.
+                Your visible name shown on your dashboard greeting and cards.
               </p>
             </div>
 
-            {/* Username / Email */}
+            {/* Username / Account ID */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
                   Username / Account ID
                 </label>
-                {/* Character limit shown ONLY while editing */}
                 {isEditing ? (
                   <span className="text-[10px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
                     {formData.username.length}/20
@@ -330,7 +403,6 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                 <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
                   Email Address
                 </label>
-                {/* Character limit shown ONLY while editing */}
                 {isEditing ? (
                   <span className="text-[10px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
                     {formData.email.length}/50
@@ -363,13 +435,52 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
               </p>
             </div>
 
+            {/* Gender Field (Optional) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
+                  Gender (Optional)
+                </label>
+                <span className="text-[10px] font-mono text-slate-400">Not shared publicly</span>
+              </div>
+              {isEditing ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { value: 'prefer_not_to_say', label: '🔒 Prefer not to say' },
+                    { value: 'male', label: '👨 Male' },
+                    { value: 'female', label: '👩 Female' },
+                    { value: 'other', label: '🌈 Other' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: opt.value })}
+                      className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
+                        formData.gender === opt.value
+                          ? 'bg-sky-500/10 border-sky-500 text-sky-600 dark:text-sky-400 shadow-xs ring-1 ring-sky-500/40'
+                          : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl text-sm bg-slate-100/70 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                  {formData.gender === 'male' && '👨 Male'}
+                  {formData.gender === 'female' && '👩 Female'}
+                  {formData.gender === 'other' && '🌈 Other'}
+                  {(!formData.gender || formData.gender === 'prefer_not_to_say') && '🔒 Prefer not to say'}
+                </div>
+              )}
+            </div>
+
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] font-mono tracking-wider text-slate-600 dark:text-slate-400 uppercase block font-semibold">
                   {isEditing ? 'New Password' : 'Account Password'}
                 </label>
-                {/* Character limit shown ONLY while editing */}
                 {isEditing ? (
                   <span className="text-[10px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
                     {formData.password.length}/10
@@ -471,18 +582,17 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                   { id: 'dark', label: 'Dark' },
                   { id: 'light', label: 'Light' },
                   { id: 'system', label: 'System' },
-                ].map((theme) => (
+                ].map((t) => (
                   <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() => setTheme(theme.id)}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      themeMode === theme.id
-                        ? 'bg-sky-500 text-white dark:text-slate-950 shadow-sm shadow-sky-500/30'
+                    key={t.id}
+                    onClick={() => setTheme(t.id)}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all capitalize cursor-pointer ${
+                      themeMode === t.id
+                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-200 dark:border-slate-700/80 font-bold'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                     }`}
                   >
-                    {theme.label}
+                    {t.label}
                   </button>
                 ))}
               </div>
@@ -522,7 +632,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
             </div>
           </div>
 
-          {/* Guest Account Info Box */}
+          {/* Account Tier & GDPR Controls */}
           {isGuest && (
             <div className="bg-sky-500/5 border border-sky-500/20 p-5 rounded-2xl space-y-2.5">
               <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-xs uppercase tracking-wider">
@@ -530,7 +640,7 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                 <span>Guest Mode Notice</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                You are currently exploring in <strong>Guest Mode</strong>. Profile customization is reserved for registered accounts.
+                You are currently exploring in <strong>Guest Mode</strong>. Profile customization and avatar selection are preserved locally, but registering an account enables cloud sync.
               </p>
               {openAuthModal && (
                 <button
@@ -544,7 +654,6 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
             </div>
           )}
 
-          {/* Account Privacy & Deletion (DPDP & GDPR Compliance) */}
           {!isGuest && (
             <div className="bg-rose-500/5 border border-rose-500/20 p-5 rounded-2xl space-y-3">
               <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
@@ -558,15 +667,12 @@ export default function SettingsTab({ active, user, onUpdateProfile, onDeleteAcc
                 type="button"
                 disabled={deleting}
                 onClick={async () => {
-                  if (window.confirm('Are you absolutely sure you want to permanently delete your account and all associated data? This action cannot be undone.')) {
+                  if (window.confirm('Are you ABSOLUTELY sure? This will permanently delete your account, collections, problem sets, and activity heatmap. This cannot be undone.')) {
                     try {
                       setDeleting(true);
-                      if (onDeleteAccount) {
-                        await onDeleteAccount();
-                      }
+                      await onDeleteAccount();
                     } catch (err) {
-                      setStatusMessage({ type: 'error', text: err?.message || 'Failed to delete account.' });
-                    } finally {
+                      alert(err.message || 'Failed to delete account');
                       setDeleting(false);
                     }
                   }

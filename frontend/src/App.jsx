@@ -9,7 +9,6 @@ import {
   Trash2,
   Settings,
   MoreHorizontal,
-  Menu,
   X,
   Plus,
   Upload,
@@ -47,6 +46,7 @@ import NavItem from './components/navigation/NavItem.jsx';
 import MobileBottomNav from './components/navigation/MobileBottomNav.jsx';
 import Tooltip from './components/ui/Tooltip.jsx';
 import OfflineToast from './components/ui/OfflineToast.jsx';
+import { UserAvatarBadge } from './utils/avatars.jsx';
 import { checkBackendHealth } from './services/api.js';
 
 import useAuth from './hooks/useAuth.js';
@@ -58,7 +58,6 @@ import useAnimatedFavicon from './hooks/useAnimatedFavicon.js';
 import { today, addDays, formatDate } from './utils/date.js';
 import { getPlatformInfo, getRealUrl } from './utils/platform.js';
 import { parseMd } from './utils/markdown.js';
-import { triggerHaptic } from './utils/haptics.js';
 
 export default function App() {
   useTheme();
@@ -525,7 +524,13 @@ export default function App() {
               
               {(!user || user.isGuest) ? 
                 <button onClick={() => setAuthModal(true)} className="flex items-center gap-1.5 text-xs sm:text-sm text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-sky-500/20 active:scale-95 transition-colors cursor-pointer"><LogIn size={15}/> <span className="hidden sm:inline">Login / Register</span><span className="sm:hidden font-semibold">Login</span></button> :
-                <button onClick={handleLogoutClick} className="flex items-center gap-1.5 text-xs sm:text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-rose-500/20 active:scale-95 transition-colors cursor-pointer"><LogOut size={15}/> <span className="hidden sm:inline">Logout</span></button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setView('settings')} className="flex items-center gap-1.5 hover:opacity-85 transition-opacity cursor-pointer" title="View Profile in Settings">
+                    <UserAvatarBadge avatarId={user.avatar} size="sm" />
+                    <span className="hidden lg:inline text-xs font-semibold text-slate-300 max-w-[100px] truncate">{user.name}</span>
+                  </button>
+                  <button onClick={handleLogoutClick} className="flex items-center gap-1.5 text-xs sm:text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg hover:bg-rose-500/20 active:scale-95 transition-colors cursor-pointer"><LogOut size={15}/> <span className="hidden sm:inline">Logout</span></button>
+                </div>
               }
             </div>
           </Topbar>
